@@ -1,0 +1,3 @@
+[submodule "fireshape"]
+	path = fireshape
+	url = git@github.com:fireshape/fireshape.git
