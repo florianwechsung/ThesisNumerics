@@ -8,11 +8,9 @@ import os
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--use-cr", default=False, action="store_true")
-parser.add_argument("--dirichlet", default=False, action="store_true")
 parser.add_argument("--base-inner", type=str, default="elasticity",
                     choices=["elasticity", "laplace"])
-parser.add_argument("--alpha", type=float, default=1e-2)
+parser.add_argument("--alpha", type=float, default=None)
 parser.add_argument("--clscale", type=float, default=0.1)
 parser.add_argument("--maxiter", type=int, default=50)
 args = parser.parse_args()
@@ -33,9 +31,11 @@ elif args.base_inner == "laplace":
 else:
     raise NotImplementedError
 
-if args.use_cr:
+if args.alpha is not None:
     mu_cr = mu_base/args.alpha
-    inner = CauchyRiemannAugmentation(mu_cr, inner)
+    mu_div = mu_base/args.alpha
+    mu_div = fd.Constant(0.)
+    inner = CauchyRiemannAugmentation(mu_cr, mu_div, inner)
 
 
 mesh_m = Q.mesh_m
@@ -73,42 +73,82 @@ params_dict = {
     },
 }
 
-outdir = "output-%s/" % args.base_inner
+outdir = "./output/levelset/levelset-base-%s-cr-%s/" % (args.base_inner, args.alpha)
 out = fd.File(outdir + "domain.pvd")
-def cb(*args):
-    out.write(mesh_m.coordinates)
-    # print(fd.assemble(abs(expr)*fd.ds))
-J.cb = cb
+
 params = ROL.ParameterList(params_dict, "Parameters")
 problem = ROL.OptimizationProblem(J, q)
 solver = ROL.OptimizationSolver(problem, params)
+boundary_derivatives = []
+gradient_norms = []
+objective_values = []
+
+
+def cb(*args):
+    out.write(mesh_m.coordinates)
+    gradient_norms.append(solver.getAlgorithmState().gnorm)
+    objective_values.append(solver.getAlgorithmState().value)
+    boundary_derivatives.append(fd.assemble(fd.inner(expr, expr) * fd.ds)**0.5)
+
+
+J.cb = cb
+
 solver.solve(False)
 
+np.savetxt(outdir + "gradient_norms.txt", gradient_norms)
+np.savetxt(outdir + "objective_values.txt", objective_values)
+np.savetxt(outdir + "boundary_derivatives.txt", boundary_derivatives)
+# import sys; sys.exit()
 
-def solve_somthing(mesh):
-    V = fd.FunctionSpace(mesh, "CG", 2)
+def solve_something(mesh):
+    V = fd.FunctionSpace(mesh, "CG", 1)
     u = fd.Function(V)
     v = fd.TestFunction(V)
 
     x, y = fd.SpatialCoordinate(mesh)
     # f = fd.sin(x) * fd.sin(y) + x**2 + y**2
     # uex = x**4 * y**4
-    uex = x**3
+    uex = fd.sin(x)*fd.sin(y)#*(x*y)**3
+    # def source(xs, ys):
+    #     return 1/((x-xs)**2+(y-ys)**2 + 0.1)
+    # uex = source(0, 0)
     uex = uex - fd.assemble(uex * fd.dx)/fd.assemble(1 * fd.dx(domain=mesh))
     # f = fd.conditional(fd.ge(abs(x)-abs(y), 0), 1, 0)
-    from firedrake import inner, grad, dx, ds, div
-    f = uex - div(grad(uex))
+    from firedrake import inner, grad, dx, ds, div, sym
+    eps = fd.Constant(0.0)
+    f = uex - div(grad(uex)) + eps * div(grad(div(grad(uex))))
     n = fd.FacetNormal(mesh)
     g = inner(grad(uex), n)
-    # F = 0.1 * inner(u, v) * dx + inner(grad(u), grad(v)) * dx - f * v * dx - g * v * ds
-    f = -div(grad(uex))
-    F = inner(grad(u), grad(v)) * dx - f * v * dx
+    g1 = inner(grad(div(grad(uex))), n)
+    g2 = div(grad(uex))
+    # F = 0.1 * inner(u, v) * dx + inner(grad(u), grad(v)) * dx + inner(grad(grad(u)), grad(grad(v))) * dx - f * v * dx - g * v * ds
+    F = inner(u, v) * dx + inner(grad(u), grad(v)) * dx - f * v * dx - g * v * ds
+    F += eps * inner(div(grad(u)), div(grad(v))) * dx
+    F += eps * g1 * v * ds
+    F -= eps * g2 * inner(grad(v), n) * ds
+    # f = -div(grad(uex))
+    # F = inner(grad(u), grad(v)) * dx - f * v * dx
 
-    bc = fd.DirichletBC(V, uex, "on_boundary")
-    fd.solve(F == 0, u, bcs=bc, solver_parameters={"ksp_type": "cg", "pc_type": "jacobi", "snes_type": "ksponly", "ksp_converged_reason": None})
-    print("||grad(u-uex)|| =", fd.norm(grad(u-uex)))
-    err = fd.Function(fd.VectorFunctionSpace(mesh, "DG", V.ufl_element().degree())).interpolate(grad(u-uex))
+    # bc = fd.DirichletBC(V, uex, "on_boundary")
+    bc = None
+    fd.solve(F == 0, u, bcs=bc, solver_parameters={
+        "ksp_type": "cg",
+        "ksp_atol": 1e-13,
+        "ksp_rtol": 1e-13,
+        "ksp_dtol": 1e-13,
+        "ksp_stol": 1e-13,
+        "pc_type": "jacobi",
+        "pc_factor_mat_solver_type": "mumps",
+        "snes_type": "ksponly",
+        "ksp_converged_reason": None
+    })
+    print("||u-uex||             =", fd.norm(u-uex))
+    print("||grad(u-uex)||       =", fd.norm(grad(u-uex)))
+    print("||grad(grad(u-uex))|| =", fd.norm(grad(grad(u-uex))))
+    err = fd.Function(fd.TensorFunctionSpace(mesh, "DG", V.ufl_element().degree()-2)).interpolate(grad(grad(u-uex)))
+    # err = fd.Function(fd.FunctionSpace(mesh, "DG", V.ufl_element().degree())).interpolate(u-uex)
     fd.File(outdir + "sln.pvd").write(u)
     fd.File(outdir + "err.pvd").write(err)
 
-solve_somthing(mesh_m)
+solve_something(mesh_m)
+print(outdir)

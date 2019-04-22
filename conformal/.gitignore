@@ -1,0 +1,7 @@
+*.npy
+*.csv
+*.png
+*.pdf
+*.pvd
+*.vtu
+*.pvtu
