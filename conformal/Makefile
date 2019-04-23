@@ -7,13 +7,16 @@ levelset:
 	python3 levelset_conformal.py --base-inner elasticity --clscale .1 --maxiter 100 --alpha 0.3
 	python3 levelset_conformal.py --base-inner elasticity --clscale .1 --maxiter 100 --alpha 0.01
 	python3 levelset_conformal.py --base-inner elasticity --clscale .1 --maxiter 100 --alpha 0.001
-	python3 levelset_conformal.py --base-inner laplace --clscale .1 --maxiter 100
+	python3 levelset_conformal.py --base-inner laplace --clscale .1 --maxiter 30
 	python3 levelset_conformal.py --base-inner laplace --clscale .1 --maxiter 100 --alpha 0.3
 	python3 levelset_conformal.py --base-inner laplace --clscale .1 --maxiter 100 --alpha 0.01
 	python3 levelset_conformal.py --base-inner laplace --clscale .1 --maxiter 100 --alpha 0.001
 
-levelset_plot:
-	python3 levelset_plot.py
+levelset_convergence:
+	python3 levelset_convergence.py
+
+levelset_cdf:
+	python3 levelset_inv_cdf.py
 
 levelset_pv:
 	${PVPYTHON} levelset_paraview.py

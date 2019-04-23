@@ -83,10 +83,16 @@ boundary_derivatives = []
 gradient_norms = []
 objective_values = []
 
+refinner = fs.ElasticityInnerProduct(Q, mu=fd.Constant(1.), direct_solve=True)
+deriv = fs.ControlVector(Q, refinner)
+
 
 def cb(*args):
     out.write(mesh_m.coordinates)
-    gradient_norms.append(solver.getAlgorithmState().gnorm)
+    J.derivative(deriv)
+    deriv.apply_riesz_map()
+    gradient_norms.append(deriv.norm())
+    # gradient_norms.append(solver.getAlgorithmState().gnorm)
     objective_values.append(solver.getAlgorithmState().value)
     boundary_derivatives.append(fd.assemble(fd.inner(expr, expr) * fd.ds)**0.5)
 
@@ -150,5 +156,5 @@ def solve_something(mesh):
     fd.File(outdir + "sln.pvd").write(u)
     fd.File(outdir + "err.pvd").write(err)
 
-solve_something(mesh_m)
+# solve_something(mesh_m)
 print(outdir)
