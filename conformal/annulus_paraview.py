@@ -25,6 +25,7 @@ except:
     pass
 # create a new 'PVD Reader'
 dilatation_pvd = PVDReader(FileName=base + case + filename)
+case = case.replace(".", "p")
 # get animation scene
 animationScene = GetAnimationScene()
 
@@ -61,3 +62,5 @@ renderView1.CameraPosition = [-0.5, 0.5, 1]
 renderView1.CameraFocalPoint = [-0.5, 0.5, 0]
 renderView1.CameraParallelScale = 0.5
 SaveScreenshot(img_directory + case + "_mesh.png", view=renderView1, magnification=2, quality=95)
+animationScene.GoToFirst()
+SaveScreenshot(img_directory + case + "_mesh_initial.png", view=renderView1, magnification=2, quality=95)
