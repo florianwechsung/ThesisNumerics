@@ -3,23 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from collections import OrderedDict
 from plot_helpers import ls
-linestyles = OrderedDict(
-        [('solid',               (0, ())),
-            ('loosely dotted',      (0, (1, 10))),
-            ('dotted',              (0, (1, 5))),
-            ('densely dotted',      (0, (1, 1))),
-
-            ('loosely dashed',      (0, (5, 10))),
-            ('dashed',              (0, (5, 5))),
-            ('densely dashed',      (0, (5, 1))),
-
-            ('loosely dashdotted',  (0, (3, 10, 1, 10))),
-            ('dashdotted',          (0, (3, 5, 1, 5))),
-            ('densely dashdotted',  (0, (3, 1, 1, 1))),
-
-            ('loosely dashdotdotted', (0, (3, 10, 1, 10, 1, 10))),
-            ('dashdotdotted',         (0, (3, 5, 1, 5, 1, 5))),
-            ('densely dashdotdotted', (0, (3, 1, 1, 1, 1, 1)))])
 labels = {
         'base-elasticity-cr-None': r'$\mathring{H}(\mathrm{sym})$',
         'base-elasticity-cr-0p3': r'$CR(0.3)+\mathring{H}(\mathrm{sym})$',
@@ -46,6 +29,7 @@ mydir = r'./output/levelset/img/'
 counter = 0
 qs = [1.5, 1.75, 2.0, 2.5, 3.0]
 print("&" + '&'.join(str(q) for q in qs) + r"&\text{max}\\\hline")
+
 for label in labels.keys():
     f = "inv_cdf_levelset-" + label + ".npy"
     label = labels[label]
@@ -68,6 +52,6 @@ plt.xlim((1, 1.5))
 plt.xlabel(r"$\eta$")
 plt.ylabel(r"Fraction of cells with $\eta(K)\le \eta$")
 plt.legend()
-plt.title("Mesh quality inverse CDF")
+plt.title("Mesh quality CDF")
 plt.tight_layout(pad=0.)
-plt.savefig(mydir + "levelset_inv_cdf.pdf", dpi=300)
+plt.savefig(mydir + "levelset_cdf.pdf", dpi=300)

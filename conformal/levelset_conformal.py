@@ -19,9 +19,6 @@ args = parser.parse_args()
 mesh = fs.DiskMesh(args.clscale, radius=3, smooth=10)
 
 Q = fs.FeControlSpace(mesh)
-d = distance_function(Q.get_space_for_inner()[0].mesh())
-mu_base = 0.01 / (0.01 + d)
-
 
 mu_base = fd.Constant(1.0)
 if args.base_inner == "elasticity":
@@ -33,9 +30,7 @@ else:
 
 if args.alpha is not None:
     mu_cr = mu_base/args.alpha
-    mu_div = mu_base/args.alpha
-    mu_div = fd.Constant(0.)
-    inner = CauchyRiemannAugmentation(mu_cr, mu_div, inner)
+    inner = CauchyRiemannAugmentation(mu_cr, inner)
 
 
 mesh_m = Q.mesh_m

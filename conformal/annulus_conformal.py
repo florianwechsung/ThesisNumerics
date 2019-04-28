@@ -44,8 +44,7 @@ else:
 
 if args.alpha is not None:
     mu_cr = mu_base/args.alpha
-    mu_div = fd.Constant(0.)
-    inner = CauchyRiemannAugmentation(mu_cr, mu_div, inner)
+    inner = CauchyRiemannAugmentation(mu_cr, inner)
 
 
 mesh_m = Q.mesh_m

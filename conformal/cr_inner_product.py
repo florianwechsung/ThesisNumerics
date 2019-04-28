@@ -3,10 +3,9 @@ import firedrake as fd
 
 class CauchyRiemannAugmentation(fs.UflInnerProduct):
 
-    def __init__(self, mu_cr, mu_div, inner):
+    def __init__(self, mu_cr, inner):
         self.inner = inner
         self.mu_cr = mu_cr
-        self.mu_div = mu_div
         super().__init__(inner.Q, fixed_bids=inner.fixed_bids,
                          extra_bcs=inner.extra_bcs,
                          direct_solve=inner.direct_solve)
@@ -27,8 +26,7 @@ class CauchyRiemannAugmentation(fs.UflInnerProduct):
                 + fd.inner(fd.grad(u1)[1] + fd.grad(u2)[0],
                            fd.grad(v1)[1] + fd.grad(v2)[0])
                 ) * self.mu_cr * fd.dx
-        a_div = self.mu_div * fd.inner(fd.div(u), fd.div(v)) * fd.dx
-        return a + a_cr + a_div
+        return a + a_cr
 
     def get_nullspace(self, V):
         return self.inner.get_nullspace(V)
