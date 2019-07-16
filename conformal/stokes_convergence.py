@@ -27,6 +27,9 @@ plt.rcParams.update(params)
 # plt.rc('text', usetex=True)
 # plt.rc('font', family='serif')
 f, axarr = plt.subplots(1, 2, figsize=(15.24/2.54, 5.6/2.54))
+
+tablecolumns = []
+header = []
 for counter, name in enumerate([ 'base_elasticity_cr_False','base_elasticity_cr_True',
               'base_laplace_cr_False', 'base_laplace_cr_True']):
     d = "./output/stokes/" + name + "/"
@@ -41,6 +44,8 @@ for counter, name in enumerate([ 'base_elasticity_cr_False','base_elasticity_cr_
     # axarr[1].semilogy(moving_average(pde_solves, n=10), moving_average(cnorms, n=10), label=labels[name], marker=ms[counter],
                       # markevery=m[counter], markersize=2, linewidth=0.5)
     # axarr[0].semilogy(pde_solves, cnorms, label=labels[name])
+    tablecolumns.extend([pde_solves, Jvals, gnorms])
+    header.extend([name + "-x", name + "-J", name + "-g"])
 
 for ax in axarr:
     ax.set_xlabel("PDE Solves")
@@ -54,3 +59,10 @@ axarr[1].set_title('Norm of gradient of Lagrangian')
 mydir = r'./output/stokes/img/'
 plt.tight_layout(pad=0.)
 f.savefig(mydir + "stokes_convergence.pdf", dpi=1000)
+maxlen = max(len(t) for t in tablecolumns)
+for i in range(len(tablecolumns)):
+    data = np.zeros(maxlen)
+    data[:] = np.nan
+    data[0:len(tablecolumns[i])] = tablecolumns[i]
+    tablecolumns[i] = data
+np.savetxt(mydir + "stokesconvergencedata.txt", np.vstack(tablecolumns).T, delimiter=",", newline="\n", header=",".join(header), comments='')

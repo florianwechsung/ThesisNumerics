@@ -52,7 +52,7 @@ mesh_m = Q.mesh_m
 
 r = fd.sqrt(x**2 + y**2)
 expr = (r-fd.Constant(rs))*(r-fd.Constant(Rs))
-J = fsz.LevelsetFunctional(expr, Q, scale=0.1, quadrature_degree=5)
+J = 0.1 * fsz.LevelsetFunctional(expr, Q, quadrature_degree=5)
 q = fs.ControlVector(Q, inner)
 
 params_dict = {

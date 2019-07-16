@@ -46,9 +46,25 @@ annulus:
 	python3 annulus_conformal.py --maxiter 50 --base laplace --rstar 0.75 --alpha 0.01
 	python3 annulus_conformal.py --maxiter 50 --base elasticity --rstar 0.75
 	python3 annulus_conformal.py --maxiter 50 --base elasticity --rstar 0.75 --alpha 0.01
+	python3 annulus_conformal.py --maxiter 50 --base laplace --rstar 0.80
+	python3 annulus_conformal.py --maxiter 50 --base laplace --rstar 0.80 --alpha 0.01
+	python3 annulus_conformal.py --maxiter 50 --base elasticity --rstar 0.80
+	python3 annulus_conformal.py --maxiter 50 --base elasticity --rstar 0.80 --alpha 0.01
+	python3 annulus_conformal.py --maxiter 50 --base laplace --rstar 0.85
+	python3 annulus_conformal.py --maxiter 50 --base laplace --rstar 0.85 --alpha 0.01
+	python3 annulus_conformal.py --maxiter 50 --base elasticity --rstar 0.85
+	python3 annulus_conformal.py --maxiter 50 --base elasticity --rstar 0.85 --alpha 0.01
 
 annulus_pv:
 	${PVPYTHON} annulus_paraview.py --base laplace --rstar 0.75
 	${PVPYTHON} annulus_paraview.py --base laplace --rstar 0.75 --alpha 0.01
 	${PVPYTHON} annulus_paraview.py --base elasticity --rstar 0.75
 	${PVPYTHON} annulus_paraview.py --base elasticity --rstar 0.75 --alpha 0.01
+	${PVPYTHON} annulus_paraview.py --base laplace --rstar 0.80
+	${PVPYTHON} annulus_paraview.py --base laplace --rstar 0.80 --alpha 0.01
+	${PVPYTHON} annulus_paraview.py --base elasticity --rstar 0.80
+	${PVPYTHON} annulus_paraview.py --base elasticity --rstar 0.80 --alpha 0.01
+	${PVPYTHON} annulus_paraview.py --base laplace --rstar 0.85
+	${PVPYTHON} annulus_paraview.py --base laplace --rstar 0.85 --alpha 0.01
+	${PVPYTHON} annulus_paraview.py --base elasticity --rstar 0.85
+	${PVPYTHON} annulus_paraview.py --base elasticity --rstar 0.85 --alpha 0.01

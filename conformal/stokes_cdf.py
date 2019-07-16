@@ -30,17 +30,25 @@ counter = 0
 qs = [1.5, 1.75, 2.0, 2.5, 3.0]
 print("&" + '&'.join(str(q) for q in qs) + r"&\text{max}\\\hline")
 
-for label in labels.keys():
-    f = "inv_cdf_" + label + ".npy"
-    label = labels[label]
+tablecolumns = []
+header = []
+for key in labels.keys():
+    f = "inv_cdf_" + key + ".npy"
+    label = labels[key]
     xy = np.load(mydir + f)
     qual = xy[:, 1]
-    plt.plot(qual, xy[:, 2], label=label, marker=ms[counter],
+    x = qual
+    y = xy[:, 2]
+    plt.plot(x, y, label=label, marker=ms[counter],
              markevery=m[counter], markersize=4, color=colors[counter], linewidth=1, linestyle=lts[counter])
     print(label + "&"
           + "&".join(f"{100.*np.sum(qual>q)/len(qual):.1f}\%" for q in qs)
           + "&" + f"{np.max(qual):.1f}" + r"\\")
     counter += 1
+    tablecolumns.append(x)
+    tablecolumns.append(y)
+    header.append(key + "-x")
+    header.append(key + "-y")
     if counter == 4:
         qual = xy[:, 0]
         plt.plot(qual, xy[:, 2], label="Initial mesh", color=colors[counter])
@@ -48,6 +56,10 @@ for label in labels.keys():
               "&".join(f"{100.*np.sum(qual>q)/len(qual):.1f}\%" for q in qs)
               + "&" + f"{np.max(qual):.1f}" + r"\\")
         counter += 1
+        tablecolumns.append(qual)
+        tablecolumns.append(xy[:, 2])
+        header.append("initial" + "-x")
+        header.append("initial" + "-y")
 plt.xlim((1, 1.5))
 plt.xlabel(r"$\eta$")
 plt.ylabel(r"Fraction of cells with $\eta(K)\le \eta$")
@@ -55,3 +67,8 @@ plt.legend()
 plt.title("Mesh quality CDF")
 plt.tight_layout(pad=0.)
 plt.savefig(mydir + "stokes_cdf.pdf", dpi=300)
+qualis = np.linspace(1.0, 3.0, num=100)
+for i in range(len(tablecolumns)//2):
+    tablecolumns[2*i+1] = np.interp(qualis, tablecolumns[2*i], tablecolumns[2*i+1])
+    tablecolumns[2*i] = qualis
+np.savetxt(mydir + "stokescdfdata.txt", np.vstack(tablecolumns).T, delimiter=",", newline="\n", header=",".join(header), comments='')
