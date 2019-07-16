@@ -44,7 +44,7 @@ expr = (fd.sqrt((x - a)**2 + b * y**2) - 1) \
     * (fd.sqrt(b * x**2 + (y - a)**2) - 1) \
     * (fd.sqrt(b * x**2 + (y + a)**2) - 1) - 0.001
 
-J = fsz.LevelsetFunctional(expr, Q, scale=0.1, quadrature_degree=5)
+J = 0.1 * fsz.LevelsetFunctional(expr, Q, quadrature_degree=5)
 q = fs.ControlVector(Q, inner)
 
 params_dict = {
@@ -70,7 +70,6 @@ params_dict = {
 
 outdir = "./output/levelset/levelset-base-%s-cr-%s/" % (args.base_inner, args.alpha)
 out = fd.File(outdir + "domain.pvd")
-
 params = ROL.ParameterList(params_dict, "Parameters")
 problem = ROL.OptimizationProblem(J, q)
 solver = ROL.OptimizationSolver(problem, params)

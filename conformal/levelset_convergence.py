@@ -43,7 +43,8 @@ prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 colors = [colors[0], colors[1], colors[2], colors[3], colors[1], colors[2], colors[3]]
 
-
+tablecolumns = []
+header = []
 for i, outdir in enumerate(outdirs):
     if os.path.exists(os.path.join("./output/levelset", outdir)):
         fi = "gradient_norms"
@@ -60,9 +61,15 @@ for i, outdir in enumerate(outdirs):
             y = y[1:]/y[1]
             x = list(range(0, len(y)))
             plt.semilogy(x, y, label=labels[i], linestyle=lts[i], color=colors[i])
+        tablecolumns.append(x)
+        tablecolumns.append(y)
+        header.append(outdir + "-x")
+        header.append(outdir + "-y")
 
 plotdir = "output/levelset/img/"
 os.makedirs(plotdir, exist_ok=True)
 plt.legend(loc='lower left')
 plt.tight_layout(pad=0.)
 plt.savefig(os.path.join(plotdir, "levelset_convergence.pdf"))
+
+np.savetxt(plotdir + "levelsetconvergencedata.txt", np.vstack(tablecolumns).T, delimiter=",", newline="\n", header=",".join(header), comments='')
