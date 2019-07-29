@@ -16,6 +16,7 @@ parser.add_argument("--order", type=int, default=1)
 parser.add_argument("--opt-re", type=int, default=100)
 parser.add_argument("--element-size", type=float, default=None)
 parser.add_argument("--tikhonov", type=float, default=0)
+parser.add_argument("--cr", type=float, default=0)
 parser.add_argument("--surf", dest="surf", default=False,
                     action="store_true")
 parser.add_argument("--spectral", dest="spectral", default=False,
@@ -61,8 +62,9 @@ def mh_cb(mh_r):
     d = distance_function(mh_r[0])
     mu = 0.01/(d+0.01)
     extension[0] = fs.ElasticityForm(mu=mu)
-    mu_cr = 1 * mu
-    extension[0] = fs.CauchyRiemannAugmentation(extension[0], mu=mu_cr)
+    if args.cr > 0:
+        mu_cr = args.cr * mu
+        extension[0] = fs.CauchyRiemannAugmentation(extension[0], mu=mu_cr)
     if args.surf:
         Q[0] = fs.ScalarFeMultiGridControlSpace(
             mh_r, extension[0], order=args.order,

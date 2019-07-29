@@ -1,87 +1,69 @@
 #!/bin/zsh
 
-
 mkdir -p output
+line=""
+out="tasklist.txt"
+rm $out
+counter=0
 #h=1.4
 #for nref in 1 2 3; do
-for nref in 1 2; do
+for optre in 500 1000; do
+  for nref in 1 2; do
     #for order in 1 2; do
     for order in 2; do
-        #for problem in "pipe" "obstacle"; do
-        for problem in "obstacle"; do
-            if [ $problem = "pipe" ]; then
-                h=0.25
-            else
-                h=1.4
-            fi
-            for disc in "sv" "pkp0"; do
-                for solver in "lu" "almg"; do
-                    #if [ $disc = "sv" ]; then
-                    if [ $disc = "sv" ]  && [ $solver = "almg" ] && [ $order = 2 ]; then
-                        continue
-                    fi
-                    if [ $disc = "sv" ]; then
-                        mh="bary"
-                        stab="burman"
-                        stabw=5e-3
-                    else
-                        mh="uniform"
-                        stab="supg"
-                        stabw=0.25
-                    fi
-                    if [ $solver = "almg" ]; then
-                        gamma=1e4
-                    else
-                        gamma=0
-                    fi
-                    smooth="--smooth"
-                    tikhonov=1e-3
-                    label=$problem-$disc-$solver-$mh-nref-$nref-order-$order-stab-$stab-stabw-$stabw-gamma-$gamma-tikhonov-$tikhonov$smooth
-                    echo $label
-                    mpiexec -n 4 python3 pipeopt.py --solver-type $solver --patch star --discretisation $disc --mh $mh --k 2 --stabilisation-type $stab --stabilisation-weight $stabw --nref $nref --gamma $gamma --order $order --time --problem $problem --opt-re 500 --label $label --element-size $h --tikhonov $tikhonov $smooth 2>&1 | tee output/$label.log
+      for problem in "pipe" "obstacle"; do
+        if [ $problem = "pipe" ]; then
+          h=0.25
+        else
+          h=1.4
+        fi
+        #for disc in "sv" "pkp0"; do
+        for disc in "pkp0"; do
+          #for solver in "lu" "almg"; do
+          for solver in "almg"; do
+            for cr in 0.5 1 2 4; do
+              for stab in "supg" "burman" "none"; do
+                declare -a stabws
+                if [ $stab = "supg" ]; then
+                  stabws=(0.125 0.25 0.5 1.0)
+                elif [ $stab = "burman" ]; then
+                  stabws=("2e-3", "5e-3", "1e-2")
+                else
+                  stabws=( 0 )
+                fi
+                for stabw in ${stabws[@]}; do
+                  if [ $disc = "sv" ]  && [ $solver = "almg" ] && [ $order = 2 ]; then
+                    continue
+                  fi
+                  if [ $disc = "sv" ]  && [ $stab = "supg" ]; then
+                    continue
+                  fi
+
+                  if [ $disc = "sv" ]; then
+                    mh="bary"
+                  else
+                    mh="uniform"
+                  fi
+                  if [ $solver = "almg" ]; then
+                    gamma=1e4
+                  else
+                    gamma=0
+                  fi
+                  smooth="--smooth"
+                  tikhonov=1e-3
+                  restr="--restriction"
+                  label=$problem-$disc-nref-$nref-$solver-$mh$restr-stab-$stab-stabw-$stabw-gamma-$gamma-optre-$optre-order-$order-tikhonov-$tikhonov-cr-$cr$smooth
+                  line="mpiexec -n 1 python3 pipeopt.py --solver-type $solver --patch star --discretisation $disc --mh $mh --k 2 --stabilisation-type $stab --stabilisation-weight $stabw --nref $nref --gamma $gamma $restr --order $order --time --problem $problem --opt-re $optre --label $label --element-size $h --tikhonov $tikhonov --cr $cr $smooth 2>&1 | tee output/$label.log"
+                  delay=$((($counter%4)*5))
+                  counter=$(($counter+1))
+                  echo $line
+                  echo "sleep ${delay}s; $line" >> $out
                 done
+              done
             done
-
-        #    disc="sv"
-        #    solver="lu"
-        #    label=$disc-order-$order$surf-optre-500-h-$h-solver-$solver-gamma-0-$smooth-nref-$nref
-        #    echo $label
-        #    mpiexec -n 4 python3 pipeopt.py --solver-type lu --patch star --discretisation $disc --mh bary --k 2 --stabilisation-type none --nref $nref --gamma 0 --time --problem obstacle --order $order --opt-re 500 --label $label --element-size $h $smooth 2>&1 | tee output/$label.log
-        #disc="pkp0"
-        #    for solver in "lu" "almg"; do
-        #        if [ $solver = "almg" ]; then
-        #            gamma=1e3
-        #        else
-        #            gamma=0
-        #        fi
-        #        label=$disc-order-$order$surf$spectral-optre-500-h-$h-solver-$solver-gamma-$gamma-$smooth-nref-$nref-stab-burman
-        #        echo $label
-        #        mpiexec -n 4 python3 pipeopt.py --solver-type $solver --patch star --discretisation $disc --mh uniform --k 2 --stabilisation-type burman --stabilisation-weight 5e-3 --nref $nref --gamma $gamma --time --problem obstacle --order $order --opt-re 500 --label $label --element-size $h $smooth 2>&1 | tee output/$label.log
-        #    done
+          done
         done
+      done
     done
+  done
 done
-
-#disc="pkp0"
-#solver="lu"
-#order=2
-#gamma=1e4
-##surf="--surf"
-#surf=""
-#smooth="--smooth"
-##smooth=""
-##spectral="--spectral"
-#spectral=""
-#h=1.4
-#stab="burman"
-#stabw="5e-3"
-#stab="supg"
-#stabw="0.25"
-##stab="none"
-#problem="obstacle"
-#problem="pipe"
-#tikhonov="1e-2"
-#h=0.25
-#label=$problem-$disc-order-$order$surf$spectral-optre-500-h-$h-solver-$solver-gamma-$gamma$smooth-stab-$stab-stabw-$stabw-tikhonov-$tikhonov-nol2
-##
-#mpiexec -n 4 python3 pipeopt.py --solver-type $solver --patch star --discretisation $disc --mh uniform --k 2 --stabilisation-type $stab --stabilisation-weight $stabw --nref 2 --restriction --gamma $gamma $smooth --time --problem $problem --order $order --opt-re 500 $surf $spectral --label $label --element-size $h --paraview --tikhonov $tikhonov 2>&1 | tee output/$label.log
