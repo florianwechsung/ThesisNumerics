@@ -100,7 +100,7 @@ Background Field = 3;
 
     def relaxation_direction(self): return "0+:1+"
 
-    def mesh_size(self, u):
+    def mesh_size(self, u, domain):
         # the factor below are chosen so that the calculation is exact for a regular simplex
         if domain == "facet":
             if self.dim == 2:
