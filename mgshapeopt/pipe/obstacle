@@ -8,7 +8,7 @@ counter=0
 #h=1.4
 #for nref in 1 2 3; do
 for optre in 500 1000; do
-  for nref in 1 2; do
+  for nref in 2 3; do
     #for order in 1 2; do
     for order in 2; do
       for problem in "pipe" "obstacle"; do
@@ -20,18 +20,24 @@ for optre in 500 1000; do
         #for disc in "sv" "pkp0"; do
         for disc in "pkp0"; do
           #for solver in "lu" "almg"; do
-          for solver in "almg"; do
-            for cr in 0.5 1 2 4; do
-              for stab in "supg" "burman" "none"; do
+          for solver in "lu"; do
+            for cr in 0.5 1 2; do
+              #cr=1
+              #for stab in "supg" "burman" "none"; do
+              for stab in "supg" "burman"; do
+                #stab="supg"
                 declare -a stabws
                 if [ $stab = "supg" ]; then
-                  stabws=(0.125 0.25 0.5 1.0)
+                  #stabws=(0.5 1.0 2.0)
+                  stabws=(1.0)
                 elif [ $stab = "burman" ]; then
-                  stabws=("2e-3", "5e-3", "1e-2")
+                  #stabws=("2e-3", "5e-3", "1e-2")
+                  stabws=("5e-3")
                 else
                   stabws=( 0 )
                 fi
                 for stabw in ${stabws[@]}; do
+                  #stabw=1.0
                   if [ $disc = "sv" ]  && [ $solver = "almg" ] && [ $order = 2 ]; then
                     continue
                   fi
@@ -50,14 +56,18 @@ for optre in 500 1000; do
                     gamma=0
                   fi
                   smooth="--smooth"
-                  tikhonov=1e-3
-                  restr="--restriction"
-                  label=$problem-$disc-nref-$nref-$solver-$mh$restr-stab-$stab-stabw-$stabw-gamma-$gamma-optre-$optre-order-$order-tikhonov-$tikhonov-cr-$cr$smooth
-                  line="mpiexec -n 1 python3 pipeopt.py --solver-type $solver --patch star --discretisation $disc --mh $mh --k 2 --stabilisation-type $stab --stabilisation-weight $stabw --nref $nref --gamma $gamma $restr --order $order --time --problem $problem --opt-re $optre --label $label --element-size $h --tikhonov $tikhonov --cr $cr $smooth 2>&1 | tee output/$label.log"
-                  delay=$((($counter%4)*5))
-                  counter=$(($counter+1))
-                  echo $line
-                  echo "sleep ${delay}s; $line" >> $out
+                  for tikhonov in 1e-3 3e-3 1e-2; do
+                    #tikhonov=1e-3
+                    for htwo in 0 0.1 1; do
+                      restr="--restriction"
+                      label=$problem-$disc-nref-$nref-$solver-$mh$restr-stab-$stab-stabw-$stabw-gamma-$gamma-optre-$optre-order-$order-tikhonov-$tikhonov-cr-$cr-htwo-$htwo$smooth
+                      line="mpiexec -n 1 python3 pipeopt.py --solver-type $solver --patch star --discretisation $disc --mh $mh --k 2 --stabilisation-type $stab --stabilisation-weight $stabw --nref $nref --gamma $gamma $restr --order $order --time --problem $problem --opt-re $optre --element-size $h --tikhonov $tikhonov --cr $cr --htwo $htwo $smooth --label $label 2>&1 | tee output/$label.log"
+                      delay=$((($counter%4)*5))
+                      counter=$(($counter+1))
+                      echo $line
+                      echo "sleep ${delay}s; $line" >> $out
+                    done
+                  done
                 done
               done
             done

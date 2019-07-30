@@ -5,6 +5,7 @@ import fireshape.zoo as fsz
 import firedrake as fd
 from distance_function import distance_function
 from alfi import get_default_parser, get_solver, run_solver
+from utils import C1Regulariser
 import ROL
 import sys
 
@@ -17,6 +18,7 @@ parser.add_argument("--opt-re", type=int, default=100)
 parser.add_argument("--element-size", type=float, default=None)
 parser.add_argument("--tikhonov", type=float, default=0)
 parser.add_argument("--cr", type=float, default=0)
+parser.add_argument("--htwo", type=float, default=0)
 parser.add_argument("--surf", dest="surf", default=False,
                     action="store_true")
 parser.add_argument("--spectral", dest="spectral", default=False,
@@ -65,6 +67,9 @@ def mh_cb(mh_r):
     if args.cr > 0:
         mu_cr = args.cr * mu
         extension[0] = fs.CauchyRiemannAugmentation(extension[0], mu=mu_cr)
+    if args.htwo > 0:
+        mu_c1 = fd.Constant(args.htwo)
+        extension[0] = C1Regulariser(extension[0], mu=mu_c1)
     if args.surf:
         Q[0] = fs.ScalarFeMultiGridControlSpace(
             mh_r, extension[0], order=args.order,
@@ -192,8 +197,9 @@ if args.spectral:
     Js = fsz.MoYoSpectralConstraint(1e3, fd.Constant(0.5), Q)
     J = J + Js
 if args.tikhonov > 0:
-    Jt = args.tikhonov * fsz.DeformationRegularization(
-        Q, l2_reg=0., sym_grad_reg=1., skew_grad_reg=1.)
+    Jt = args.tikhonov * fsz.CoarseDeformationRegularization(extension, Q)
+    # Jt = args.tikhonov * fsz.DeformationRegularization(
+    #     Q, l2_reg=0., sym_grad_reg=1., skew_grad_reg=1.)
     J = J + Jt
 
 if args.smooth:
@@ -208,7 +214,7 @@ x, y = fd.SpatialCoordinate(Q.mesh_m)
 baryx = fsz.LevelsetFunctional(x, Q)
 baryy = fsz.LevelsetFunctional(y, Q)
 if args.problem == "pipe":
-    wrap = lambda f: fs.DeformationCheckObjective(f, delta_threshold=0.10,  # noqa
+    wrap = lambda f: fs.DeformationCheckObjective(f, delta_threshold=0.50,  # noqa
                                                   strict=False)
     scale = 1e-1
     J = wrap(scale*J)
