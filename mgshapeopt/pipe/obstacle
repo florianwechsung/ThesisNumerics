@@ -58,8 +58,8 @@ for optre in 500 1000; do
                     for htwo in 0.1; do
                       restr="--restriction"
                       label=$problem-$disc-nref-$nref-$solver-$mh$restr-stab-$stab-stabw-$stabw-gamma-$gamma-optre-$optre-order-$order-tikhonov-$tikhonov-cr-$cr-htwo-$htwo$smooth
-                      line="mpiexec -n 12 python3 pipeopt.py --solver-type $solver --patch star --discretisation $disc --mh $mh --k 2 --stabilisation-type $stab --stabilisation-weight $stabw --nref $nref --gamma $gamma $restr --order $order --time --problem $problem --opt-re $optre --element-size $h --tikhonov $tikhonov --cr $cr --htwo $htwo $smooth --label $label 2>&1 | tee output/$label.log"
-                      delay=$((($counter%4)*3))
+                      line="mpiexec -n 18 python3 pipeopt.py --solver-type $solver --patch star --discretisation $disc --mh $mh --k 2 --stabilisation-type $stab --stabilisation-weight $stabw --nref $nref --gamma $gamma $restr --order $order --time --problem $problem --opt-re $optre --element-size $h --tikhonov $tikhonov --cr $cr --htwo $htwo $smooth --high-accuracy 2>&1 | tee output/$label.log"
+                      delay=$((($counter%2)*3))
                       counter=$(($counter+1))
                       echo $line
                       echo "sleep ${delay}s; $line" >> $out
