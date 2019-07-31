@@ -300,6 +300,8 @@ def cb(*args):
     adjoint_ksp_iters = solver.solver_adjoint.snes.getLinearSolveIterations()
     adjoint_ksp_iters *= 1./max(adjoint_snes_iters, 1)
 
+    if state_snes_iters == 0:
+        return
     data["iter"].append(len(data["iter"]))
     data["state_snes_iters"].append(state_snes_iters)
     data["state_ksp_iters"].append(state_ksp_iters)
