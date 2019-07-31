@@ -216,7 +216,7 @@ elif args.problem == "obstacle":
     else:
         scale = 1e0
 
-    def wrap(f): return fs.DeformationCheckObjective(f, delta_threshold=0.50,  # noqa
+    def wrap(f): return fs.DeformationCheckObjective(f, delta_threshold=0.10,  # noqa
                                                   strict=False)
     J = wrap(scale*J)
     vol = wrap(scale**0.5 * vol)
@@ -230,7 +230,7 @@ else:
 params_dict = {
     'General': {
         'Secant': {
-            'Type': 'Limited-Memory BFGS', 'Maximum Storage': 15
+            'Type': 'Limited-Memory BFGS', 'Maximum Storage': 20
         }
     },
     'Step': {
@@ -244,7 +244,7 @@ params_dict = {
             'Subproblem Step Type': 'Line Search',
             'Penalty Parameter Growth Factor': 1.5,
             'Print Intermediate Optimization History': True,
-            'Subproblem Iteration Limit': 20,
+            'Subproblem Iteration Limit': 30,
             "Use Default Initial Penalty Parameter": False,
             "Initial Penalty Parameter": 1.0,
             "Use Default Problem Scaling": False,
@@ -255,7 +255,7 @@ params_dict = {
     'Status Test': {
         'Gradient Tolerance': 1e-8,
         'Step Tolerance': 1e-6,
-        'Iteration Limit': 6
+        'Iteration Limit': 10
     }
 }
 
