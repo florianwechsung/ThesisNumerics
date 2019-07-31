@@ -3,6 +3,7 @@ from obstacleproblem import ObstacleProblem
 import fireshape as fs
 import fireshape.zoo as fsz
 import firedrake as fd
+import numpy as np
 from distance_function import distance_function
 from alfi import get_default_parser, get_solver, run_solver
 from utils import C1Regulariser
@@ -25,7 +26,11 @@ parser.add_argument("--spectral", dest="spectral", default=False,
                     action="store_true")
 parser.add_argument("--smooth", dest="smooth", default=False,
                     action="store_true")
+
 args, _ = parser.parse_known_args()
+label = f"{args.problem}-{args.discretisation}-nref-{args.nref}-{args.solver_type}-{args.mh}-stab-{args.stabilisation_type}-stabw-{args.stabilisation_weight}-gamma-{args.gamma}-optre-{args.opt_re}-order-{args.order}-tikhonov-{args.tikhonov}-cr-{args.cr}-htwo-{args.htwo}"  # noqa
+if args.label is not None:
+    label = label + args.label
 optre = args.opt_re
 h = args.element_size
 if args.problem == "pipe":
@@ -88,15 +93,13 @@ if args.surf:
 else:
     innerp = fs.UflInnerProductFromForm(
         extension, Q, fixed_bids=fixed_bids, direct_solve=True)
-    # innerp = fs.ElasticityInnerProduct(
-    #     Q, fixed_bids=fixed_bids, direct_solve=True)
 
 # import IPython; IPython.embed()
 
-res = [1, 10, 50, 100, 150, 200, 250, 300, 400, 500, 750, 1000]
+res = [1, 10, 50, 100, 150, 200, 250, 300, 400, 499, 750, 999]
 res = [r for r in res if r <= optre]
-if res[-1] != optre:
-    res.append(optre)
+if res[-1] != optre-1:
+    res.append(optre-1)
 results = run_solver(solver, res, args)
 # import sys; sys.exit()
 
@@ -162,7 +165,7 @@ class Objective(fs.ShapeObjective):
             if hasattr(solver, 'vtransfer'):
                 solver.vtransfer.force_rebuild()
             for i, mesh in enumerate(Q.mh_m):
-                fd.File("output/mesh-%i.pvd" % i).write(mesh.coordinates)
+                fd.File("output/%s-mesh-%i.pvd" % (label, i)).write(mesh.coordinates)
             fd.warning(fd.BLUE % "Solve state")
             solver.solve(optre)
             fd.warning(fd.BLUE % "Solve adjoint")
@@ -171,40 +174,25 @@ class Objective(fs.ShapeObjective):
 
 
 constraint = Constraint()
-J = Objective(Q)
+obj = Objective(Q)
+J = obj
 if args.label is not None:
     out = fd.File("output/u-%s.pvd" % args.label)
 else:
     out = fd.File("output/u.pvd")
 
-qactionout = fd.File("output/actionq.pvd")
-temp = fs.InteriorControlConstraint(Q.V_r_coarse, form=extension)
 
 
-def cb(*args):
-    sys.stdout.flush()
-    sys.stderr.flush()
-    out.write(solver.z.split()[0])
-    temp.temp2.assign(Q.intermediate_Ts[0])
-    temp.temp2 -= Q.intermediate_Ids[0]
-    temp.apply_action(temp.temp2, temp.temp1)
-    temp.bc.apply(temp.temp1)
-    qactionout.write(temp.temp1)
-
-
-J.cb = cb
 if args.spectral:
     Js = fsz.MoYoSpectralConstraint(1e3, fd.Constant(0.5), Q)
     J = J + Js
 if args.tikhonov > 0:
     Jt = args.tikhonov * fsz.CoarseDeformationRegularization(extension, Q)
-    # Jt = args.tikhonov * fsz.DeformationRegularization(
-    #     Q, l2_reg=0., sym_grad_reg=1., skew_grad_reg=1.)
     J = J + Jt
 
 if args.smooth:
-    # dirichlet_extension = fs.DirichletExtension(Q.V_r_coarse, form=extension)
-    control_constraint = fs.InteriorControlConstraint(Q.V_r_coarse, form=extension)
+    control_constraint = fs.InteriorControlConstraint(
+        Q.V_r_coarse, form=extension)
 else:
     dirichlet_extension = None
     control_constraint = None
@@ -214,44 +202,35 @@ x, y = fd.SpatialCoordinate(Q.mesh_m)
 baryx = fsz.LevelsetFunctional(x, Q)
 baryy = fsz.LevelsetFunctional(y, Q)
 if args.problem == "pipe":
-    wrap = lambda f: fs.DeformationCheckObjective(f, delta_threshold=0.50,  # noqa
+    def wrap(f): return fs.DeformationCheckObjective(f, delta_threshold=0.50,  # noqa
                                                   strict=False)
     scale = 1e-1
     J = wrap(scale*J)
     vol = wrap(0.1 * scale**0.5 * vol)
     econ = fs.EqualityConstraint([vol])
     emul = ROL.StdVector(1)
+    econ_val = ROL.StdVector(1)
 elif args.problem == "obstacle":
     if args.surf:
         scale = 1e-3
     else:
         scale = 1e0
-    # all points on lower part of obstacle need to have y<=0
-    Jbox1 = fsz.MoYoBoxConstraint(
-        fd.Constant(1e5), [5], Q, lower_bound=fd.Constant((-100, -100)),
-        upper_bound=fd.Constant((100, 0)))
-    # all points on upper part of obstacle need to have y>=0
-    Jbox2 = fsz.MoYoBoxConstraint(
-        fd.Constant(1e5), [6], Q, lower_bound=fd.Constant((-100, 0)),
-        upper_bound=fd.Constant((100, 100)))
 
-    wrap = lambda f: fs.DeformationCheckObjective(f, delta_threshold=0.50,  # noqa
+    def wrap(f): return fs.DeformationCheckObjective(f, delta_threshold=0.10,  # noqa
                                                   strict=False)
-    # wrap = lambda f: f
-
-    # J = wrap(scale*J + Jbox1 + Jbox2)
     J = wrap(scale*J)
     vol = wrap(scale**0.5 * vol)
     baryx = wrap(scale**0.5 * 1e1*baryx)
     baryy = wrap(scale**0.5 * 1e1*baryy)
     econ = fs.EqualityConstraint([vol, baryx, baryy])
     emul = ROL.StdVector(3)
+    econ_val = ROL.StdVector(3)
 else:
     raise NotImplementedError
 params_dict = {
     'General': {
         'Secant': {
-            'Type': 'Limited-Memory BFGS', 'Maximum Storage': 5
+            'Type': 'Limited-Memory BFGS', 'Maximum Storage': 20
         }
     },
     'Step': {
@@ -265,50 +244,89 @@ params_dict = {
             'Subproblem Step Type': 'Line Search',
             'Penalty Parameter Growth Factor': 1.5,
             'Print Intermediate Optimization History': True,
-            'Subproblem Iteration Limit': 100,
+            'Subproblem Iteration Limit': 30,
             "Use Default Initial Penalty Parameter": False,
             "Initial Penalty Parameter": 1.0,
             "Use Default Problem Scaling": False,
             "Initial Optimality Tolerance": 1e-6,
-            "Initial Feasibility Tolerance": 1e-6,
+            # "Initial Feasibility Tolerance": 1e-6,
         }
     },
     'Status Test': {
         'Gradient Tolerance': 1e-8,
         'Step Tolerance': 1e-6,
-        'Iteration Limit': 1
+        'Iteration Limit': 10
     }
 }
 
 
 g = q.clone()
-J.update(q, None, 0)
-J.gradient(g, q, None)
-g.scale(1e-3)
-res = J.checkGradient(q, g, 5, 1)
-q.scale(0)
-J.update(q, None, 0)
+gecon = q.clone()
+# J.update(q, None, 0)
+
+# J.gradient(g, q, None)
+# g.scale(1e-3)
+# res = J.checkGradient(q, g, 5, 1)
+# q.scale(0)
+# J.update(q, None, 0)
 
 params = ROL.ParameterList(params_dict, "Parameters")
-if args.problem == "obstacle":
-    lb = q.clone()
-    lb.fun.assign(-100)
-    ub = q.clone()
-    ub.fun.assign(100)
-    x, y = fd.SpatialCoordinate(lb.fun.ufl_domain())
-    fd.DirichletBC(
-        lb.fun.function_space(), fd.as_vector([-100, -y]), 6).apply(lb.fun)
-    fd.DirichletBC(
-        ub.fun.function_space(), fd.as_vector([100, -y]), 5).apply(ub.fun)
-    bnd = ROL.Bounds(lb, ub, 1.0)
-    bnd = None
-else:
-    bnd = None
-problem = ROL.OptimizationProblem(J, q, econ=econ, emul=emul, bnd=bnd)
+
+problem = ROL.OptimizationProblem(J, q, econ=econ, emul=emul)
 rolsolver = ROL.OptimizationSolver(problem, params)
+
+data = {
+    "iter": [],
+    "state_snes_iters": [],
+    "state_ksp_iters": [],
+    "adjoint_snes_iters": [],
+    "adjoint_ksp_iters": [],
+    "drag": [],
+    "Jval": [],
+    "Jgrad": [],
+    "cval": [],
+}
+
+
+def cb(*args):
+    sys.stdout.flush()
+    sys.stderr.flush()
+    out.write(solver.z.split()[0])
+
+    state_snes_iters = solver.solver.snes.getIterationNumber()
+    state_ksp_iters = solver.solver.snes.getLinearSolveIterations()
+    state_ksp_iters *= 1/max(state_snes_iters, 1)
+    adjoint_snes_iters = solver.solver_adjoint.snes.getIterationNumber()
+    adjoint_ksp_iters = solver.solver_adjoint.snes.getLinearSolveIterations()
+    adjoint_ksp_iters *= 1./max(adjoint_snes_iters, 1)
+
+    data["iter"].append(len(data["iter"]))
+    data["state_snes_iters"].append(state_snes_iters)
+    data["state_ksp_iters"].append(state_ksp_iters)
+    data["adjoint_snes_iters"].append(adjoint_snes_iters)
+    data["adjoint_ksp_iters"].append(adjoint_ksp_iters)
+
+    econ.value(econ_val, None, None)
+    econ.applyAdjointJacobian(gecon, emul, None, None)
+    J.gradient(g, None, None)
+    fd.warning("gecon %f" % gecon.norm())
+    fd.warning("g %f" % g.norm())
+    g.plus(gecon)
+
+    data["drag"].append(obj.value(None, None))
+    data["Jval"].append(J.value(None, None))
+    data["Jgrad"].append(g.norm())
+    data["cval"].append(econ_val.norm())
+
+
+obj.cb = cb
+
 vol_before = vol.value(q, None)
 rolsolver.solve(Q.mesh_m.mpi_comm().rank == 0)
 fd.File("output/q-%s.pvd" % args.label).write(q.fun)
+npdata = np.vstack([np.asarray(data[k]) for k in data.keys()]).T
+np.savetxt("output/" + label + ".txt", npdata, delimiter=";",
+           header=";".join(data.keys()), comments='')
 g = q.clone()
 J.update(q, None, 0)
 J.gradient(g, q, None)
