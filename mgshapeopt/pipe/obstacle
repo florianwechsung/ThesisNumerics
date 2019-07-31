@@ -6,10 +6,8 @@ out="tasklist.txt"
 rm $out
 counter=0
 #h=1.4
-#for nref in 1 2 3; do
 for optre in 500 1000; do
   for nref in 2 3; do
-    #for order in 1 2; do
     for order in 2; do
       for problem in "pipe" "obstacle"; do
         if [ $problem = "pipe" ]; then
@@ -20,11 +18,11 @@ for optre in 500 1000; do
         #for disc in "sv" "pkp0"; do
         for disc in "pkp0"; do
           #for solver in "lu" "almg"; do
-          for solver in "lu"; do
-            for cr in 0.5 1 2; do
+          for solver in "almg"; do
+            for cr in 1; do
               #cr=1
               #for stab in "supg" "burman" "none"; do
-              for stab in "supg" "burman"; do
+              for stab in "supg"; do
                 #stab="supg"
                 declare -a stabws
                 if [ $stab = "supg" ]; then
@@ -56,13 +54,12 @@ for optre in 500 1000; do
                     gamma=0
                   fi
                   smooth="--smooth"
-                  for tikhonov in 1e-3 3e-3 1e-2; do
-                    #tikhonov=1e-3
-                    for htwo in 0 0.1 1; do
+                  for tikhonov in 1e-3; do
+                    for htwo in 0.1; do
                       restr="--restriction"
                       label=$problem-$disc-nref-$nref-$solver-$mh$restr-stab-$stab-stabw-$stabw-gamma-$gamma-optre-$optre-order-$order-tikhonov-$tikhonov-cr-$cr-htwo-$htwo$smooth
-                      line="mpiexec -n 1 python3 pipeopt.py --solver-type $solver --patch star --discretisation $disc --mh $mh --k 2 --stabilisation-type $stab --stabilisation-weight $stabw --nref $nref --gamma $gamma $restr --order $order --time --problem $problem --opt-re $optre --element-size $h --tikhonov $tikhonov --cr $cr --htwo $htwo $smooth --label $label 2>&1 | tee output/$label.log"
-                      delay=$((($counter%4)*5))
+                      line="mpiexec -n 18 python3 pipeopt.py --solver-type $solver --patch star --discretisation $disc --mh $mh --k 2 --stabilisation-type $stab --stabilisation-weight $stabw --nref $nref --gamma $gamma $restr --order $order --time --problem $problem --opt-re $optre --element-size $h --tikhonov $tikhonov --cr $cr --htwo $htwo $smooth --high-accuracy 2>&1 | tee output/$label.log"
+                      delay=$((($counter%2)*3))
                       counter=$(($counter+1))
                       echo $line
                       echo "sleep ${delay}s; $line" >> $out
