@@ -176,11 +176,7 @@ class Objective(fs.ShapeObjective):
 constraint = Constraint()
 obj = Objective(Q)
 J = obj
-if args.label is not None:
-    out = fd.File("output/u-%s.pvd" % args.label)
-else:
-    out = fd.File("output/u.pvd")
-
+out = fd.File("output/%s.pvd" % label)
 
 
 if args.spectral:
@@ -242,7 +238,7 @@ params_dict = {
         },
         'Augmented Lagrangian': {
             'Subproblem Step Type': 'Line Search',
-            'Penalty Parameter Growth Factor': 1.5,
+            'Penalty Parameter Growth Factor': 4,
             'Print Intermediate Optimization History': True,
             'Subproblem Iteration Limit': 30,
             "Use Default Initial Penalty Parameter": False,
@@ -253,8 +249,8 @@ params_dict = {
         }
     },
     'Status Test': {
-        'Gradient Tolerance': 1e-8,
-        'Step Tolerance': 1e-6,
+        'Gradient Tolerance': 1e-9,
+        'Step Tolerance': 1e-10,
         'Iteration Limit': 10
     }
 }
