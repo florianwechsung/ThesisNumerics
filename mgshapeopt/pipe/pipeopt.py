@@ -202,6 +202,7 @@ x, y = fd.SpatialCoordinate(Q.mesh_m)
 baryx = fsz.LevelsetFunctional(x, Q)
 baryy = fsz.LevelsetFunctional(y, Q)
 if args.problem == "pipe":
+    econ_unscaled = fs.EqualityConstraint([vol])
     def wrap(f): return fs.DeformationCheckObjective(f, delta_threshold=0.50,  # noqa
                                                   strict=False)
     scale = 1e-1
@@ -211,6 +212,7 @@ if args.problem == "pipe":
     emul = ROL.StdVector(1)
     econ_val = ROL.StdVector(1)
 elif args.problem == "obstacle":
+    econ_unscaled = fs.EqualityConstraint([vol, baryx, baryy])
     if args.surf:
         scale = 1e-3
     else:
@@ -308,7 +310,7 @@ def cb(*args):
     data["adjoint_snes_iters"].append(adjoint_snes_iters)
     data["adjoint_ksp_iters"].append(adjoint_ksp_iters)
 
-    econ.value(econ_val, None, None)
+    econ_unscaled.value(econ_val, None, None)
     econ.applyAdjointJacobian(gecon, emul, None, None)
     J.gradient(g, None, None)
     fd.warning("gecon %f" % gecon.norm())
