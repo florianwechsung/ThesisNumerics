@@ -17,11 +17,11 @@ class C1Regulariser(fs.BilinearForm):
 
         def h(domain):
             if domain.topological_dimension() == 3:
-                return (fd.FacetArea(domain)*6)**(1./3)
-            else:
                 return (fd.FacetArea(domain)*2)**(1./2)
+            else:
+                return fd.FacetArea(domain)
         h = h(V.mesh())
-        alpha = fd.Constant(50.)
+        alpha = fd.Constant(10)
         from firedrake import div, grad, dS, dx, inner, jump, avg
 
         def form(u, v):
