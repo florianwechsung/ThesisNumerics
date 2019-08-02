@@ -304,9 +304,9 @@ def cb(*args):
     econ_unscaled.value(econ_val, None, None)
     econ.applyAdjointJacobian(gecon, emul, None, None)
     J.gradient(g, None, None)
-    fd.warning("gecon %f" % gecon.norm())
-    fd.warning("g %f" % g.norm())
     g.plus(gecon)
+    fd.warning("dL: %e" % g.norm())
+    fd.warning("c : %e" % econ_val.norm())
 
     data["drag"].append(obj.value(None, None))
     data["Jval"].append(J.value(None, None))
