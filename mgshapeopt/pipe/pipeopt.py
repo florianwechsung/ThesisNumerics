@@ -28,9 +28,9 @@ parser.add_argument("--smooth", dest="smooth", default=False,
                     action="store_true")
 
 args, _ = parser.parse_known_args()
-label = f"{args.problem}-{args.discretisation}-nref-{args.nref}-{args.solver_type}-{args.mh}-stab-{args.stabilisation_type}-stabw-{args.stabilisation_weight}-gamma-{args.gamma}-optre-{args.opt_re}-order-{args.order}-tikhonov-{args.tikhonov}-cr-{args.cr}-htwo-{args.htwo}"  # noqa
+label = f"{args.problem}-{args.dim}d-{args.discretisation}-nref-{args.nref}-{args.solver_type}-{args.mh}-stab-{args.stabilisation_type}-stabw-{args.stabilisation_weight}-gamma-{args.gamma}-optre-{args.opt_re}-order-{args.order}-tikhonov-{args.tikhonov}-cr-{args.cr}-htwo-{args.htwo}"  # noqa
 if args.label is not None:
-    label = label + args.label
+    label = label + "-" + args.label
 optre = args.opt_re
 h = args.element_size
 if args.problem == "pipe":
@@ -44,14 +44,9 @@ if args.problem == "pipe":
         raise NotImplementedError
     problem = PipeProblem(order=args.order, dim=args.dim, element_size=h)
 elif args.problem == "obstacle":
-    if args.dim == 3:
-        if h is None:
-            h = 1./4.
-    elif args.dim == 2:
-        if h is None:
-            h = 1.
-    else:
-        raise NotImplementedError
+    assert args.dim == 2
+    if h is None:
+        h = 1.
     problem = ObstacleProblem(order=args.order, dim=args.dim, element_size=h)
 else:
     raise NotImplementedError
@@ -97,7 +92,7 @@ else:
 # import IPython; IPython.embed()
 
 res = [1, 10, 50, 100, 150, 200, 250, 300, 400, 499, 750, 999]
-res = [r for r in res if r <= optre]
+res = [r for r in res if r <= optre-1]
 if res[-1] != optre-1:
     res.append(optre-1)
 results = run_solver(solver, res, args)
@@ -194,12 +189,9 @@ else:
     control_constraint = None
 q = fs.ControlVector(Q, innerp, control_constraint=control_constraint)
 vol = fsz.LevelsetFunctional(fd.Constant(10.0), Q)
-x, y = fd.SpatialCoordinate(Q.mesh_m)
-baryx = fsz.LevelsetFunctional(x, Q)
-baryy = fsz.LevelsetFunctional(y, Q)
 if args.problem == "pipe":
     econ_unscaled = fs.EqualityConstraint([vol])
-    def wrap(f): return fs.DeformationCheckObjective(f, delta_threshold=0.50,  # noqa
+    def wrap(f): return fs.DeformationCheckObjective(f, delta_threshold=0.25 if args.dim == 2 else 0.1,  # noqa
                                                   strict=False)
     scale = 1e-1
     J = wrap(scale*J)
@@ -208,6 +200,9 @@ if args.problem == "pipe":
     emul = ROL.StdVector(1)
     econ_val = ROL.StdVector(1)
 elif args.problem == "obstacle":
+    x, y = fd.SpatialCoordinate(Q.mesh_m)
+    baryx = fsz.LevelsetFunctional(x, Q)
+    baryy = fsz.LevelsetFunctional(y, Q)
     econ_unscaled = fs.EqualityConstraint([vol, baryx, baryy])
     if args.surf:
         scale = 1e-3
@@ -253,7 +248,7 @@ params_dict = {
     'Status Test': {
         'Gradient Tolerance': 1e-9,
         'Step Tolerance': 1e-10,
-        'Iteration Limit': 10
+        'Iteration Limit': 10 if args.dim == 2 else 4,
     }
 }
 
@@ -323,7 +318,7 @@ obj.cb = cb
 
 vol_before = vol.value(q, None)
 rolsolver.solve(Q.mesh_m.mpi_comm().rank == 0)
-fd.File("output/q-%s.pvd" % args.label).write(q.fun)
+fd.File("output/q-%s.pvd" % label).write(q.fun)
 npdata = np.vstack([np.asarray(data[k]) for k in data.keys()]).T
 np.savetxt("output/" + label + ".txt", npdata, delimiter=";",
            header=";".join(data.keys()), comments='')
