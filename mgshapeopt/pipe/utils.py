@@ -22,13 +22,16 @@ class C1Regulariser(fs.BilinearForm):
                 return fd.FacetArea(domain)
         h = h(V.mesh())
         alpha = fd.Constant(10)
-        from firedrake import div, grad, dS, dx, inner, jump, avg
+        from firedrake import div, grad, dS, dx, inner, jump, avg, ds
 
         def form(u, v):
             return inner(div(grad(u)), div(grad(v)))*dx \
                 - inner(avg(div(grad(u))), jump(grad(v), n))*dS \
                 - inner(jump(grad(u), n), avg(div(grad(v))))*dS \
-                + alpha/h*inner(jump(grad(u), n), jump(grad(v), n))*dS
+                + alpha/h*inner(jump(grad(u), n), jump(grad(v), n))*dS \
+                - inner(div(grad(u)), inner(grad(v), n))*ds \
+                - inner(inner(grad(u), n), div(grad(v)))*ds \
+                + alpha/h*inner(grad(u), grad(v))*ds
 
         return base + self.mu * (form(u[0], v[0]) + form(u[1], v[1]))
 
