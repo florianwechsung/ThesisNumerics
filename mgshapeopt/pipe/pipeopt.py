@@ -28,7 +28,7 @@ parser.add_argument("--smooth", dest="smooth", default=False,
                     action="store_true")
 
 args, _ = parser.parse_known_args()
-label = f"{args.problem}-{args.dim}d-{args.discretisation}-nref-{args.nref}-{args.solver_type}-{args.mh}-stab-{args.stabilisation_type}-stabw-{args.stabilisation_weight}-gamma-{args.gamma}-optre-{args.opt_re}-order-{args.order}-tikhonov-{args.tikhonov}-cr-{args.cr}-htwo-{args.htwo}"  # noqa
+label = f"{args.problem}-{args.dim}d-{args.discretisation}-nref-{args.nref}-{args.solver_type}-{args.mh}-stab-{args.stabilisation_type}-stabw-{args.stabilisation_weight}-gamma-{args.gamma}-optre-{args.opt_re}-order-{args.order}-tikhonov-{args.tikhonov}-cr-{args.cr}-htwo-{args.htwo}-h-{args.element_size}"  # noqa
 if args.label is not None:
     label = label + "-" + args.label
 optre = args.opt_re
@@ -116,6 +116,15 @@ class Constraint(fs.PdeConstraint):
 
 class Objective(fs.ShapeObjective):
 
+    def __init__(self, *args_, **kwargs_):
+        super().__init__(*args_, **kwargs_)
+        self.fake_val = None
+
+    def value(self, *args_):
+        if self.fake_val is None:
+            return super().value(*args_)
+        return self.fake_val
+
     def value_form(self):
         return objective_form
 
@@ -150,10 +159,10 @@ class Objective(fs.ShapeObjective):
         fd.warning(fd.RED % ("norm of extra term %e" % outcopy.norm()))
         out.plus(outcopy)
 
-    def update(self, *args):
+    def update(self, *args_):
         sys.stdout.flush()
         sys.stderr.flush()
-        if super().update(*args):
+        if super().update(*args_):
             for m_ in Q.mh_m:
                 m_.coordinates.dat.data_ro
                 m_._shared_data_cache["hierarchy_physical_node_locations"] = {}
@@ -161,11 +170,24 @@ class Objective(fs.ShapeObjective):
                 solver.vtransfer.force_rebuild()
             for i, mesh in enumerate(Q.mh_m):
                 fd.File("output/%s-mesh-%i.pvd" % (label, i)).write(mesh.coordinates)
-            fd.warning(fd.BLUE % "Solve state")
-            solver.solve(optre)
-            fd.warning(fd.BLUE % "Solve adjoint")
-            solver.solver_adjoint.solve()
-            fd.warning(fd.RED % ("J(Omega)=%f" % fd.assemble(objective_form)))
+            try:
+                fd.warning(fd.BLUE % "Solve state")
+                solver.solve(optre)
+                fd.warning(fd.BLUE % "Solve adjoint")
+                solver.solver_adjoint.solve()
+                fd.warning(fd.RED % ("J(Omega)=%f" % fd.assemble(objective_form)))
+                # self.fake_val = None
+                # self.last_solution = solver.z.copy(deepcopy=True)
+                # self.last_adj_solution = solver.z_adj.copy(deepcopy=True)
+            except:
+                solver.z.assign(0)
+                solver.z_adj.assign(0)
+                res = list(range(0, optre+1, 25))
+                run_solver(solver, res, args)
+                # solver.z.assign(self.last_solution)
+                # solver.z_adj.assign(self.last_adj_solution)
+                # self.fake_val = 1e6  # a large number to trigger backtracking
+
 
 
 constraint = Constraint()
@@ -191,11 +213,12 @@ q = fs.ControlVector(Q, innerp, control_constraint=control_constraint)
 vol = fsz.LevelsetFunctional(fd.Constant(10.0), Q)
 if args.problem == "pipe":
     econ_unscaled = fs.EqualityConstraint([vol])
-    def wrap(f): return fs.DeformationCheckObjective(f, delta_threshold=0.25 if args.dim == 2 else 0.1,  # noqa
+    def wrap(f): return fs.DeformationCheckObjective(f, delta_threshold=0.25 if args.dim == 2 else 0.25,#0.1,  # noqa
                                                   strict=False)
     scale = 1e-1
     J = wrap(scale*J)
-    vol = wrap(0.1 * scale**0.5 * vol)
+    volweight = 0.1 if args.dim == 2 else 0.1
+    vol = wrap(volweight * scale**0.5 * vol)
     econ = fs.EqualityConstraint([vol])
     emul = ROL.StdVector(1)
     econ_val = ROL.StdVector(1)
@@ -231,6 +254,9 @@ params_dict = {
         'Line Search': {
             'Descent Method': {
                 'Type': 'Quasi-Newton Step'
+            },
+            'Line-Search Method': {
+                'Type': 'Backtracking'
             }
         },
         'Augmented Lagrangian': {
@@ -248,7 +274,7 @@ params_dict = {
     'Status Test': {
         'Gradient Tolerance': 1e-9,
         'Step Tolerance': 1e-10,
-        'Iteration Limit': 10 if args.dim == 2 else 4,
+        'Iteration Limit': 8 if args.dim == 2 else 4,
     }
 }
 

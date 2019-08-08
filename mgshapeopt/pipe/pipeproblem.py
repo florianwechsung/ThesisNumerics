@@ -49,7 +49,7 @@ Background Field = 1;
             distribution_parameters=distribution_parameters,
             callbacks=callbacks, project_refinements_to_cad=False,
             reorder=True,
-            gmsh="/home/wechsung/bin/gmsh-4.4.0-Linux64/bin/gmsh -algo del%id -optimize_netgen 5 -smooth 5 " % self.dim
+            gmsh="/home/wechsung/bin/gmsh-4.4.0-Linux64/bin/gmsh -algo del%id -optimize_netgen 10 -smooth 10 " % self.dim
         )
         return mh
 
