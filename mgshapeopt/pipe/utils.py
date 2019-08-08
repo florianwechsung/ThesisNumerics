@@ -15,8 +15,9 @@ class C1Regulariser(fs.BilinearForm):
         base = self.base_form.get_form(V)
         n = fd.FacetNormal(V.ufl_domain())
 
+        dim = V.mesh().topological_dimension()
         def h(domain):
-            if domain.topological_dimension() == 3:
+            if dim == 3:
                 return (fd.FacetArea(domain)*2)**(1./2)
             else:
                 return fd.FacetArea(domain)
@@ -33,7 +34,8 @@ class C1Regulariser(fs.BilinearForm):
                 - inner(inner(grad(u), n), div(grad(v)))*ds \
                 + alpha/h*inner(grad(u), grad(v))*ds
 
-        return base + self.mu * (form(u[0], v[0]) + form(u[1], v[1]))
+        form = base + self.mu * (sum(form(u[i], v[i]) for i in range(dim)))
+        return form
 
     def get_nullspace(self, V):
         return self.base_form.get_nullspace(V)
