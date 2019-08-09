@@ -175,19 +175,13 @@ class Objective(fs.ShapeObjective):
                 solver.solve(optre)
                 fd.warning(fd.BLUE % "Solve adjoint")
                 solver.solver_adjoint.solve()
-                fd.warning(fd.RED % ("J(Omega)=%f" % fd.assemble(objective_form)))
-                # self.fake_val = None
-                # self.last_solution = solver.z.copy(deepcopy=True)
-                # self.last_adj_solution = solver.z_adj.copy(deepcopy=True)
+                fd.warning(fd.BLUE % ("J(Omega)=%f" % fd.assemble(objective_form)))
             except:
+                fd.warning(fd.RED % "Solver failed, let's try from scratch.")
                 solver.z.assign(0)
                 solver.z_adj.assign(0)
                 res = list(range(0, optre+1, 25))
                 run_solver(solver, res, args)
-                # solver.z.assign(self.last_solution)
-                # solver.z_adj.assign(self.last_adj_solution)
-                # self.fake_val = 1e6  # a large number to trigger backtracking
-
 
 
 constraint = Constraint()
@@ -213,8 +207,8 @@ q = fs.ControlVector(Q, innerp, control_constraint=control_constraint)
 vol = fsz.LevelsetFunctional(fd.Constant(10.0), Q)
 if args.problem == "pipe":
     econ_unscaled = fs.EqualityConstraint([vol])
-    def wrap(f): return fs.DeformationCheckObjective(f, delta_threshold=0.25 if args.dim == 2 else 0.25,#0.1,  # noqa
-                                                  strict=False)
+    def wrap(f): return fs.DeformationCheckObjective(f, delta_threshold=0.25 if args.dim == 2 else 0.25,  # noqa
+                                                     strict=False)
     scale = 1e-1
     J = wrap(scale*J)
     volweight = 0.1 if args.dim == 2 else 0.1
@@ -255,9 +249,6 @@ params_dict = {
             'Descent Method': {
                 'Type': 'Quasi-Newton Step'
             },
-            'Line-Search Method': {
-                'Type': 'Backtracking'
-            }
         },
         'Augmented Lagrangian': {
             'Subproblem Step Type': 'Line Search',
@@ -274,7 +265,7 @@ params_dict = {
     'Status Test': {
         'Gradient Tolerance': 1e-9,
         'Step Tolerance': 1e-10,
-        'Iteration Limit': 8 if args.dim == 2 else 4,
+        'Iteration Limit': 8 if args.dim == 2 else 5,
     }
 }
 
@@ -342,8 +333,9 @@ def cb(*args):
 
 obj.cb = cb
 
-vol_before = vol.value(q, None)
+fd.warning(fd.BLUE % ("Initial volume: %f" % fd.assemble(fd.Constant(1) * fd.dx(domain=Q.mesh_m))))
 rolsolver.solve(Q.mesh_m.mpi_comm().rank == 0)
+fd.warning(fd.BLUE % ("Final volume: %f" % fd.assemble(fd.Constant(1) * fd.dx(domain=Q.mesh_m))))
 fd.File("output/q-%s.pvd" % label).write(q.fun)
 npdata = np.vstack([np.asarray(data[k]) for k in data.keys()]).T
 np.savetxt("output/" + label + ".txt", npdata, delimiter=";",
