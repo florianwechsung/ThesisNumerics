@@ -71,14 +71,14 @@ Background Field = 1;
 
     def relaxation_direction(self): return "0+:1+"
 
-    def mesh_size(self, u, domain):
+    def mesh_size(self, u, domain_type):
         # the factor below are chosen so that the calculation is exact for a regular simplex
-        if domain == "facet":
+        if domain_type == "facet":
             if self.dim == 2:
                 return FacetArea(u.ufl_domain())
             elif self.dim == 3:
                 return (2 * FacetArea(u.ufl_domain())**(1./2))  # area to length
-        elif domain == "cell":
+        elif domain_type == "cell":
             if self.dim == 2:
                 return (2*CellVolume(u.ufl_domain())**(1./2))  # area to length
             elif self.dim == 3:
