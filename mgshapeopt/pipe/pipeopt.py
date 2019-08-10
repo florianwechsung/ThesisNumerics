@@ -300,7 +300,7 @@ data = {
 }
 
 
-def cb(*args):
+def cb(*cbargs):
     sys.stdout.flush()
     sys.stderr.flush()
     if not args.lowstorage:
