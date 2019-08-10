@@ -26,6 +26,8 @@ parser.add_argument("--spectral", dest="spectral", default=False,
                     action="store_true")
 parser.add_argument("--smooth", dest="smooth", default=False,
                     action="store_true")
+parser.add_argument("--lowstorage", dest="lowstorage", default=False,
+                    action="store_true")
 
 args, _ = parser.parse_known_args()
 label = f"{args.problem}-{args.dim}d-{args.discretisation}-nref-{args.nref}-{args.solver_type}-{args.mh}-stab-{args.stabilisation_type}-stabw-{args.stabilisation_weight}-gamma-{args.gamma}-optre-{args.opt_re}-order-{args.order}-tikhonov-{args.tikhonov}-cr-{args.cr}-htwo-{args.htwo}-h-{args.element_size}"  # noqa
@@ -91,7 +93,7 @@ else:
 
 # import IPython; IPython.embed()
 
-res = [1, 10, 50, 100, 150, 200, 250, 300, 400, 499, 750, 999]
+res = [1, 10, 50, 100, 150, 200, 250, 300, 400, 499, 625, 750, 875, 999]
 res = [r for r in res if r <= optre-1]
 if res[-1] != optre-1:
     res.append(optre-1)
@@ -209,7 +211,7 @@ if args.problem == "pipe":
     econ_unscaled = fs.EqualityConstraint([vol])
     def wrap(f): return fs.DeformationCheckObjective(f, delta_threshold=0.25 if args.dim == 2 else 0.25,  # noqa
                                                      strict=False)
-    scale = 1e-1
+    scale = 1e1
     J = wrap(scale*J)
     volweight = 0.1 if args.dim == 2 else 0.1
     vol = wrap(volweight * scale**0.5 * vol)
@@ -254,7 +256,7 @@ params_dict = {
             'Subproblem Step Type': 'Line Search',
             'Penalty Parameter Growth Factor': 4,
             'Print Intermediate Optimization History': True,
-            'Subproblem Iteration Limit': 30,
+            'Subproblem Iteration Limit': 20,
             "Use Default Initial Penalty Parameter": False,
             "Initial Penalty Parameter": 1.0,
             "Use Default Problem Scaling": False,
@@ -263,9 +265,9 @@ params_dict = {
         }
     },
     'Status Test': {
-        'Gradient Tolerance': 1e-9,
-        'Step Tolerance': 1e-10,
-        'Iteration Limit': 8 if args.dim == 2 else 5,
+        'Gradient Tolerance': 1e-20,
+        'Step Tolerance': 1e-20,
+        'Iteration Limit': 12 if args.dim == 2 else 6,
     }
 }
 
@@ -301,7 +303,8 @@ data = {
 def cb(*args):
     sys.stdout.flush()
     sys.stderr.flush()
-    out.write(solver.z.split()[0])
+    if not args.lowstorage:
+        out.write(solver.z.split()[0])
 
     state_snes_iters = solver.solver.snes.getIterationNumber()
     state_ksp_iters = solver.solver.snes.getLinearSolveIterations()
@@ -336,10 +339,17 @@ obj.cb = cb
 fd.warning(fd.BLUE % ("Initial volume: %f" % fd.assemble(fd.Constant(1) * fd.dx(domain=Q.mesh_m))))
 rolsolver.solve(Q.mesh_m.mpi_comm().rank == 0)
 fd.warning(fd.BLUE % ("Final volume: %f" % fd.assemble(fd.Constant(1) * fd.dx(domain=Q.mesh_m))))
+if args.lowstorage:
+    out.write(solver.z.split()[0])
 fd.File("output/q-%s.pvd" % label).write(q.fun)
-npdata = np.vstack([np.asarray(data[k]) for k in data.keys()]).T
+for k in data.keys():
+    data[k] = np.asarray(data[k])
+data["Jvalnormalised"] = data["Jval"]/data["Jval"][0]
+data["Jgradnormalised"] = data["Jgrad"]/data["Jgrad"][0]
+npdata = np.vstack([data[k] for k in data.keys()]).T
 np.savetxt("output/" + label + ".txt", npdata, delimiter=";",
            header=";".join(data.keys()), comments='')
+obj.cb = None
 g = q.clone()
 J.update(q, None, 0)
 J.gradient(g, q, None)
