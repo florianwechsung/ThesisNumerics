@@ -31,33 +31,44 @@ class ObstacleProblem(NavierStokesProblem):
             self.inflow_bids = [1, 3, 4]
             self.noslip_fixed_bids = []
             self.noslip_free_bids = [5, 6]
-            # self.noslip_free_bids = [5]
             self.outflow_bids = [2]
         elif dim == 3:
-            self.inflow_bids = [1]
-            self.noslip_fixed_bids = [2, 4]
-            self.noslip_free_bids = [3]
-            self.outflow_bids = [5]
+            self.inflow_bids = [1, 3]
+            self.noslip_fixed_bids = []
+            self.noslip_free_bids = [4]
+            self.outflow_bids = [2]
 
         self.order = order
         self.dim = dim
         h = element_size
-        self.element_size = """
-Characteristic Length {5, 6} = %f;
-Characteristic Length {1, 2, 3, 4} = %f;
+        if dim == 2:
+            self.element_size = """
+    Characteristic Length {5, 6} = %f;
+    Characteristic Length {1, 2, 3, 4} = %f;
 
-Field[1] = MathEval;
-Field[1].F = "%f + 0.6*sqrt(x*x+y*y)";
-Field[2] = MathEval;
-Field[2].F = "%f + 0.6*sqrt((x-1)*(x-1)+y*y)";
-Field[3] = Min;
-Field[3].FieldsList = {1, 2};
-Background Field = 3;
-""" % (h/20, h, h/200, h/200)
-        # self.element_size = """
-# Characteristic Length {5} = %f;
-# Characteristic Length {1, 2, 3, 4} = %f;
-# """ % (element_size/10, element_size)
+    Field[1] = MathEval;
+    Field[1].F = "%f + 0.6*sqrt(x*x+y*y)";
+    Field[2] = MathEval;
+    Field[2].F = "%f + 0.6*sqrt((x-1)*(x-1)+y*y)";
+    Field[3] = Min;
+    Field[3].FieldsList = {1, 2};
+    Background Field = 3;
+    """ % (h/20, h, h/200, h/200)
+        else:
+            self.element_size = """
+Field[1] = Box;
+Field[1].Thickness = 0.5;
+Field[1].VIn = %f;
+Field[1].VOut = %f;
+Field[1].XMax = 0.6;
+Field[1].XMin = -0.6;
+Field[1].YMin = -0.2;
+Field[1].YMax = 0.2;
+Field[1].ZMin = -0.2;
+Field[1].ZMax = 0.2;
+Background Field = 1;
+""" % (h/20, h)
+
 
     def mesh(self, distribution_parameters):
         base = Mesh("meshes/obstacle%id.msh" % self.dim, distribution_parameters=distribution_parameters)
@@ -72,9 +83,12 @@ Background Field = 3;
         else:
             raise NotImplemtedError("Pipe problem currently just works for uniform refinements")
 
+        if self.dim == 2:
+            fi = "meshes/airfoil2d.step"
+        else:
+            fi = "meshes/obstacle3d.step"
         mh = OpenCascadeMeshHierarchy(
-            "meshes/airfoil%id.step" % self.dim, element_size=self.element_size,
-            # "meshes/obstacle%id.step" % self.dim, element_size=self.element_size,
+            fi, element_size=self.element_size,
             levels=nref, order=self.order, cache=False, verbose=True,
             distribution_parameters=distribution_parameters,
             callbacks=callbacks, project_refinements_to_cad=False,

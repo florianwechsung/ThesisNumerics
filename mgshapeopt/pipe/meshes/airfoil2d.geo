@@ -122,7 +122,3 @@ Spline(6) = {5, 8, 7};
 Line Loop(2) = {5, -6};
 Plane Surface(2) = {2};
 BooleanDifference{ Surface{1}; Delete; }{ Surface{2}; Delete; }
-//+
-Extrude {{1, 0, 0}, {0, 0, 0}, Pi} {
-  Curve{5}; Curve{6}; 
-}

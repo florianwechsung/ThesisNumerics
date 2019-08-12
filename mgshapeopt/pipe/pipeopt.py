@@ -46,7 +46,6 @@ if args.problem == "pipe":
         raise NotImplementedError
     problem = PipeProblem(order=args.order, dim=args.dim, element_size=h)
 elif args.problem == "obstacle":
-    assert args.dim == 2
     if h is None:
         h = 1.
     problem = ObstacleProblem(order=args.order, dim=args.dim, element_size=h)
@@ -219,10 +218,16 @@ if args.problem == "pipe":
     emul = ROL.StdVector(1)
     econ_val = ROL.StdVector(1)
 elif args.problem == "obstacle":
-    x, y = fd.SpatialCoordinate(Q.mesh_m)
+    if args.dim == 2:
+        x, y = fd.SpatialCoordinate(Q.mesh_m)
+    else:
+        x, y, z = fd.SpatialCoordinate(Q.mesh_m)
     baryx = fsz.LevelsetFunctional(x, Q)
     baryy = fsz.LevelsetFunctional(y, Q)
     econ_unscaled = fs.EqualityConstraint([vol, baryx, baryy])
+    if args.dim == 3:
+        baryz = fsz.LevelsetFunctional(z, Q)
+        econ_unscaled = fs.EqualityConstraint([vol, baryx, baryy, baryz])
     if args.surf:
         scale = 1e-3
     else:
@@ -235,8 +240,11 @@ elif args.problem == "obstacle":
     baryx = wrap(scale**0.5 * 1e1*baryx)
     baryy = wrap(scale**0.5 * 1e1*baryy)
     econ = fs.EqualityConstraint([vol, baryx, baryy])
-    emul = ROL.StdVector(3)
-    econ_val = ROL.StdVector(3)
+    if args.dim == 3:
+        baryz = wrap(scale**0.5 * 1e1*baryz)
+        econ = fs.EqualityConstraint([vol, baryx, baryy, baryz])
+    emul = ROL.StdVector(args.dim + 1)
+    econ_val = ROL.StdVector(args.dim + 1)
 else:
     raise NotImplementedError
 params_dict = {
