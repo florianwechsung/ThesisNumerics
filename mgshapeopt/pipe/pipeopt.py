@@ -93,7 +93,7 @@ else:
 
 # import IPython; IPython.embed()
 
-res = [1, 10, 50, 100, 150, 200, 250, 300, 400, 499, 625, 750, 875, 999]
+res = [0, 1, 10, 50, 100, 150, 200, 250, 300, 400, 499, 625, 750, 875, 999]
 res = [r for r in res if r <= optre-1]
 if res[-1] != optre-1:
     res.append(optre-1)
