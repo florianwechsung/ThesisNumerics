@@ -62,12 +62,34 @@ Field[1].VIn = %f;
 Field[1].VOut = %f;
 Field[1].XMax = 0.6;
 Field[1].XMin = -0.6;
-Field[1].YMin = -0.15;
 Field[1].YMax = 0.15;
-Field[1].ZMin = -0.15;
+Field[1].YMin = -0.15;
 Field[1].ZMax = 0.15;
-Background Field = 1;
-""" % (h/20, h)
+Field[1].ZMin = -0.15;
+Field[2] = Box;
+Field[2].Thickness = 0.5;
+Field[2].VIn = %f;
+Field[2].VOut = %f;
+Field[2].XMin = -0.55;
+Field[2].XMax = -0.45;
+Field[2].YMin = -0.05;
+Field[2].YMax = 0.05;
+Field[2].ZMin = -0.05;
+Field[2].ZMax = 0.05;
+Field[3] = Box;
+Field[3].Thickness = 0.5;
+Field[3].VIn = %f;
+Field[3].VOut = %f;
+Field[3].XMin = 0.45;
+Field[3].XMax = 0.55;
+Field[3].YMin = -0.05;
+Field[3].YMax = 0.05;
+Field[3].ZMin = -0.05;
+Field[3].ZMax = 0.05;
+Field[4] = Min;
+Field[4].FieldsList = {1, 2, 3};
+Background Field = 4;
+""" % (h/20, h, h/40, h, h/40, h)
 
 
     def mesh(self, distribution_parameters):
