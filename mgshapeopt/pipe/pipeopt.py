@@ -212,7 +212,7 @@ if args.problem == "pipe":
                                                      strict=False)
     scale = 1e1
     J = wrap(scale*J)
-    volweight = 0.1 if args.dim == 2 else 0.1
+    volweight = 0.1 if args.dim == 2 else 1.
     vol = wrap(volweight * scale**0.5 * vol)
     econ = fs.EqualityConstraint([vol])
     emul = ROL.StdVector(1)
@@ -275,7 +275,7 @@ params_dict = {
     'Status Test': {
         'Gradient Tolerance': 1e-20,
         'Step Tolerance': 1e-20,
-        'Iteration Limit': 12 if args.dim == 2 else 6,
+        'Iteration Limit': 12 if args.dim == 2 else 5,
     }
 }
 

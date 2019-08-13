@@ -57,15 +57,15 @@ class ObstacleProblem(NavierStokesProblem):
         else:
             self.element_size = """
 Field[1] = Box;
-Field[1].Thickness = 0.5;
+Field[1].Thickness = 1.0;
 Field[1].VIn = %f;
 Field[1].VOut = %f;
 Field[1].XMax = 0.6;
 Field[1].XMin = -0.6;
-Field[1].YMin = -0.2;
-Field[1].YMax = 0.2;
-Field[1].ZMin = -0.2;
-Field[1].ZMax = 0.2;
+Field[1].YMin = -0.15;
+Field[1].YMax = 0.15;
+Field[1].ZMin = -0.15;
+Field[1].ZMax = 0.15;
 Background Field = 1;
 """ % (h/20, h)
 
