@@ -1,0 +1,74 @@
+#!/bin/bash --login
+#
+#        Resource: ARCHER (Cray XC30 (24-core per node))
+#    Batch system: PBSPro_select
+#
+#PBS -N gmgopt
+#PBS -A e590
+##PBS -q short
+#PBS -l walltime=24:00:00
+##PBS -l walltime=00:20:00
+#PBS -l select=24
+##PBS -l select=2:bigmem=true
+#PBS -m abe
+#PBS -M wechsung@maths.ox.ac.uk
+
+# Switch to current working directory
+cd $PBS_O_WORKDIR
+
+module load mesa
+module unload PrgEnv-cray
+module load PrgEnv-gnu
+module swap cray-mpich cray-mpich/7.7.4
+module swap cray-libsci/16.11.1 cray-libsci/18.12.1
+module load cray-hdf5-parallel/1.10.0.1
+module unload xalt
+module load pcre
+export LD_LIBRARY_PATH=$WORK/cad/oce-OCE-0.18.2/install/lib:$LD_LIBRARY_PATH
+export PATH=$WORK/cad/gmsh-4.4.1-Linux64/bin:$PATH
+
+
+
+FIREDRAKE_DIR=/tmp/firedrake-dev-fmwns
+
+export PETSC_DIR=${FIREDRAKE_DIR}/src/petsc/
+export PETSC_ARCH=petsc-gnu51-ivybridge-int32
+export CFLAGS="-march=ivybridge -O3"
+export PYOP2_CFLAGS="-march=ivybridge -O3"
+export PYOP2_SIMD_ISA="avx"
+export OPENBLAS_NUM_THREADS=1
+export CC=cc
+export CXX=CC
+export PYVER=3.6
+export CRAYPE_LINK_TYPE=dynamic
+export MPICH_GNI_FORK_MODE=FULLCOPY
+
+export PATH=${FIREDRAKE_DIR}/bin:$PATH
+export LD_LIBRARY_PATH=${FIREDRAKE_DIR}/lib:/tmp/env368/lib:$LD_LIBRARY_PATH
+
+export PYOP2_CACHE_DIR=$PBS_O_WORKDIR/.cache
+export FIREDRAKE_TSFC_KERNEL_CACHE_DIR=$PBS_O_WORKDIR/.cache
+export XDG_CACHE_HOME=$PBS_O_WORKDIR/.cache
+#export PYOP2_CACHE_DIR=/tmp/.cache
+#export FIREDRAKE_TSFC_KERNEL_CACHE_DIR=/tmp/.cache
+#export XDG_CACHE_HOME=/tmp/.cache
+
+export TMPDIR=/dev/shm
+export TMP=/dev/shm
+
+NODES=24
+PROCS_PER_NODE=8
+#NODES=12
+#PROCS_PER_NODE=8
+
+# Copy to compute nodes and untar venv
+aprun -n ${NODES} -N 1 /work/e590/e590/fwe590/copy-firedrake.sh
+#JOB="pipeopt.py --solver-type almg --patch star --discretisation pkp0 --mh uniform --k 2 --stabilisation-type supg --stabilisation-weight 1.0 --nref 2 --gamma 1e3 --restriction --order 2 --time --problem pipe --opt-re 250 --element-size 0.125 --tikhonov 1e-4 --cr 1 --htwo 1.0 --smooth --high-accuracy"
+#LOG="pipe-pkp0-nref-2-almg-uniform--restriction-stab-supg-stabw-1.0-gamma-1e3-optre-250-order-2-tikhonov-1e-4-cr-1-htwo-1.0--smooth"
+OPTRE=1000
+TIKH=3e-5
+JOB="pipeopt.py --solver-type almg --patch star --discretisation pkp0 --mh uniform --k 2 --stabilisation-type supg --stabilisation-weight 0.05 --nref 1 --gamma 1e3 --restriction --order 2 --time --problem pipe --dim 3 --opt-re $OPTRE --element-size 0.1 --tikhonov $TIKH --cr 0 --htwo 1.0 --smooth --high-accuracy --rebalance -dm_rebalance_partition_view --label vol1p0-nodes-$NODES"
+LOG="pipe-3d-pkp0-nref-1-almg-uniform--restriction-stab-supg-stabw-0.05-gamma-1e3-optre-$OPTRE-order-2-tikhonov-$TIKH-cr-0-htwo-1.0-h-0.1--smooth-vol1p0-nodes-$NODES"
+#JOB="pipeopt.py --solver-type almg --patch star --discretisation pkp0 --mh uniform --k 2 --stabilisation-type supg --stabilisation-weight 0.05 --nref 1 --gamma 1e3 --restriction --order 2 --time --problem obstacle --dim 3 --opt-re $OPTRE --element-size 0.8 --tikhonov $TIKH --cr 0 --htwo 0.001 --smooth --high-accuracy --rebalance -dm_rebalance_partition_view --label nodes-$NODES"
+#LOG="obstacle-3d-pkp0-nref-1-almg-uniform--restriction-stab-supg-stabw-0.05-gamma-1e3-optre-$OPTRE-order-2-tikhonov-$TIKH-cr-0-htwo-1.0-h-0.8--smooth-nodes-$NODES"
+aprun -n $((${NODES} * ${PROCS_PER_NODE})) -N ${PROCS_PER_NODE} sh -c "${FIREDRAKE_DIR}/bin/annotate-output ${FIREDRAKE_DIR}/bin/python3 ${PBS_O_WORKDIR}/${JOB}" 2>&1 | tee logs/$LOG.log
