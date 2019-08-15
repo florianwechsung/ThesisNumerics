@@ -12,14 +12,14 @@ levelset:
 	python3 levelset_conformal.py --base-inner laplace --clscale .1 --maxiter 100 --alpha 0.01
 	python3 levelset_conformal.py --base-inner laplace --clscale .1 --maxiter 100 --alpha 0.001
 
+levelset_pv:
+	${PVPYTHON} levelset_paraview.py
+
 levelset_convergence:
 	python3 levelset_convergence.py
 
 levelset_cdf:
 	python3 levelset_cdf.py
-
-levelset_pv:
-	${PVPYTHON} levelset_paraview.py
 
 stokes:
 	gmsh -2 -clscale 0.2 -smooth 100 Sphere2D.geo
