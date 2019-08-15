@@ -12,24 +12,42 @@ class PipeProblem(NavierStokesProblem):
             self.noslip_fixed_bids = [1, 3, 8, 9]
             self.noslip_free_bids = [5, 6]
             self.outflow_bids = [10]
-            # self.inflow_bids = [1]
-            # self.noslip_fixed_bids = [3]
-            # self.noslip_free_bids = [4]
-            # self.outflow_bids = [2]
         elif dim == 3:
             self.inflow_bids = [1]
             self.noslip_fixed_bids = [2, 4]
             self.noslip_free_bids = [3]
             self.outflow_bids = [5]
-            # self.inflow_bids = [1]
-            # self.noslip_fixed_bids = [3]
-            # self.noslip_free_bids = [4]
-            # self.outflow_bids = [2]
 
         self.order = order
         self.dim = dim
-        # self.element_size = element_size
-        self.element_size = """
+        if dim == 2:
+            self.element_size = """
+Field[1] = Box;
+Field[1].Thickness = 0.25;
+Field[1].VIn = %f;
+Field[1].VOut = %f;
+Field[1].XMax = 1.75;
+Field[1].XMin = 1.25;
+Field[1].YMax = 10;
+Field[1].YMin = -10;
+Field[1].ZMax = 10;
+Field[1].ZMin = -10;
+Field[2] = Box;
+Field[2].Thickness = 0.25;
+Field[2].VIn = %f;
+Field[2].VOut = %f;
+Field[2].XMax = 10.25;
+Field[2].XMin = 9.75;
+Field[2].YMax = 10;
+Field[2].YMin = -10;
+Field[2].ZMax = 10;
+Field[2].ZMin = -10;
+Field[3] = Min;
+Field[3].FieldsList = {1, 2};
+Background Field = 3;
+""" % (element_size/4, element_size, element_size/4, element_size)
+        else:
+            self.element_size = """
 Field[1] = MathEval;
 Field[1].F = "%f";
 Background Field = 1;
