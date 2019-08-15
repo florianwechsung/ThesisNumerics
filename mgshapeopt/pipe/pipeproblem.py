@@ -43,13 +43,14 @@ Background Field = 1;
         if hierarchy != "uniform":
             raise NotImplemtedError("Pipe problem currently just works for uniform refinements")
 
+        warning(RED % "Using cached mesh for reproducability!")
         mh = OpenCascadeMeshHierarchy(
             "meshes/pipe%id.step" % self.dim, element_size=self.element_size,
             levels=nref, order=self.order, cache=False, verbose=True,
             distribution_parameters=distribution_parameters,
             callbacks=callbacks, project_refinements_to_cad=False,
-            reorder=True,
-            gmsh="/home/wechsung/bin/gmsh-4.4.0-Linux64/bin/gmsh -algo del%id -optimize_netgen 10 -smooth 10 " % self.dim
+            reorder=True, cache=True,
+            gmsh="gmsh -algo del%id -optimize_netgen 10 -smooth 10 -format msh2" % self.dim
         )
         return mh
 

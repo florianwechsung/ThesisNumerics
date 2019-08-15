@@ -109,13 +109,14 @@ Background Field = 4;
             fi = "meshes/airfoil2d.step"
         else:
             fi = "meshes/obstacle3d.step"
+        warning(RED % "Using cached mesh for reproducability!")
         mh = OpenCascadeMeshHierarchy(
             fi, element_size=self.element_size,
             levels=nref, order=self.order, cache=False, verbose=True,
             distribution_parameters=distribution_parameters,
             callbacks=callbacks, project_refinements_to_cad=False,
-            reorder=True, mh_constructor=mh_constructor,
-            gmsh="/home/wechsung/bin/gmsh-4.4.0-Linux64/bin/gmsh -algo front%id -optimize_netgen 5 -smooth 5 -clscale 0.5" % self.dim
+            reorder=True, mh_constructor=mh_constructor, cache=True,
+            gmsh="gmsh -algo front%id -optimize_netgen 5 -smooth 5 -clscale 0.5" % self.dim
         )
         return mh
 
