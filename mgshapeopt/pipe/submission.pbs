@@ -63,12 +63,12 @@ PROCS_PER_NODE=8
 
 # Copy to compute nodes and untar venv
 aprun -n ${NODES} -N 1 /work/e590/e590/fwe590/copy-firedrake.sh
-#JOB="pipeopt.py --solver-type almg --patch star --discretisation pkp0 --mh uniform --k 2 --stabilisation-type supg --stabilisation-weight 1.0 --nref 2 --gamma 1e3 --restriction --order 2 --time --problem pipe --opt-re 250 --element-size 0.125 --tikhonov 1e-4 --cr 1 --htwo 1.0 --smooth --high-accuracy"
+#JOB="driver.py --solver-type almg --patch star --discretisation pkp0 --mh uniform --k 2 --stabilisation-type supg --stabilisation-weight 1.0 --nref 2 --gamma 1e3 --restriction --order 2 --time --problem pipe --opt-re 250 --element-size 0.125 --tikhonov 1e-4 --cr 1 --htwo 1.0 --smooth --high-accuracy"
 #LOG="pipe-pkp0-nref-2-almg-uniform--restriction-stab-supg-stabw-1.0-gamma-1e3-optre-250-order-2-tikhonov-1e-4-cr-1-htwo-1.0--smooth"
 OPTRE=1000
 TIKH=3e-5
-JOB="pipeopt.py --solver-type almg --patch star --discretisation pkp0 --mh uniform --k 2 --stabilisation-type supg --stabilisation-weight 0.05 --nref 1 --gamma 1e3 --restriction --order 2 --time --problem pipe --dim 3 --opt-re $OPTRE --element-size 0.1 --tikhonov $TIKH --cr 0 --htwo 1.0 --smooth --high-accuracy --rebalance -dm_rebalance_partition_view --label vol1p0-nodes-$NODES"
+JOB="driver.py --solver-type almg --patch star --discretisation pkp0 --mh uniform --k 2 --stabilisation-type supg --stabilisation-weight 0.05 --nref 1 --gamma 1e3 --restriction --order 2 --time --problem pipe --dim 3 --opt-re $OPTRE --element-size 0.1 --tikhonov $TIKH --cr 0 --htwo 1.0 --smooth --high-accuracy --rebalance -dm_rebalance_partition_view --label vol1p0-nodes-$NODES"
 LOG="pipe-3d-pkp0-nref-1-almg-uniform--restriction-stab-supg-stabw-0.05-gamma-1e3-optre-$OPTRE-order-2-tikhonov-$TIKH-cr-0-htwo-1.0-h-0.1--smooth-vol1p0-nodes-$NODES"
-#JOB="pipeopt.py --solver-type almg --patch star --discretisation pkp0 --mh uniform --k 2 --stabilisation-type supg --stabilisation-weight 0.05 --nref 1 --gamma 1e3 --restriction --order 2 --time --problem obstacle --dim 3 --opt-re $OPTRE --element-size 0.8 --tikhonov $TIKH --cr 0 --htwo 0.001 --smooth --high-accuracy --rebalance -dm_rebalance_partition_view --label nodes-$NODES"
+#JOB="driver.py --solver-type almg --patch star --discretisation pkp0 --mh uniform --k 2 --stabilisation-type supg --stabilisation-weight 0.05 --nref 1 --gamma 1e3 --restriction --order 2 --time --problem obstacle --dim 3 --opt-re $OPTRE --element-size 0.8 --tikhonov $TIKH --cr 0 --htwo 0.001 --smooth --high-accuracy --rebalance -dm_rebalance_partition_view --label nodes-$NODES"
 #LOG="obstacle-3d-pkp0-nref-1-almg-uniform--restriction-stab-supg-stabw-0.05-gamma-1e3-optre-$OPTRE-order-2-tikhonov-$TIKH-cr-0-htwo-1.0-h-0.8--smooth-nodes-$NODES"
 aprun -n $((${NODES} * ${PROCS_PER_NODE})) -N ${PROCS_PER_NODE} sh -c "${FIREDRAKE_DIR}/bin/annotate-output ${FIREDRAKE_DIR}/bin/python3 ${PBS_O_WORKDIR}/${JOB}" 2>&1 | tee logs/$LOG.log

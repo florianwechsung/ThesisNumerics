@@ -65,7 +65,7 @@ for problem in "pipe" "obstacle"; do
                     fi
                       restr="--restriction"
                       label=$problem-$disc-nref-$nref-$solver-$mh$restr-stab-$stab-stabw-$stabw-gamma-$gamma-optre-$optre-order-$order-tikhonov-$tikhonov-cr-$cr-htwo-$htwo$smooth
-                      line="annotate-output mpiexec -n 24 python3 pipeopt.py --solver-type $solver --patch star --discretisation $disc --mh $mh --k 2 --stabilisation-type $stab --stabilisation-weight $stabw --nref $nref --gamma $gamma $restr --order $order --time --problem $problem --opt-re $optre --element-size $h --tikhonov $tikhonov --cr $cr --htwo $htwo $smooth --high-accuracy 2>&1 | tee output/$label.log"
+                      line="annotate-output mpiexec -n 24 python3 driver.py --solver-type $solver --patch star --discretisation $disc --mh $mh --k 2 --stabilisation-type $stab --stabilisation-weight $stabw --nref $nref --gamma $gamma $restr --order $order --time --problem $problem --opt-re $optre --element-size $h --tikhonov $tikhonov --cr $cr --htwo $htwo $smooth --high-accuracy 2>&1 | tee output/$label.log"
                       delay=$((($counter%2)*3))
                       counter=$(($counter+1))
                       echo $line
