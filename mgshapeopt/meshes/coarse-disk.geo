@@ -1,5 +1,5 @@
 SetFactory("OpenCASCADE");
-a() = ShapeFromFile("/home/wechsung/Dropbox/Documents/Uni/DPhil/ThesisNumerics/mgshapeopt/levelset/meshes/disk.step");
+a() = ShapeFromFile("/home/wechsung/Dropbox/Documents/Uni/DPhil/ThesisNumerics/mgshapeopt/meshes/disk.step");
 
 Mesh.CharacteristicLengthMin = 0.75;
 Mesh.CharacteristicLengthMax = 0.75;
