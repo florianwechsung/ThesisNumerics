@@ -169,8 +169,9 @@ class Objective(fs.ShapeObjective):
                 m_._shared_data_cache["hierarchy_physical_node_locations"] = {}
             if hasattr(solver, 'vtransfer'):
                 solver.vtransfer.force_rebuild()
-            for i, mesh in enumerate(Q.mh_m):
-                fd.File("output/%s-mesh-%i.pvd" % (label, i)).write(mesh.coordinates)
+            # for i, mesh in enumerate(Q.mh_m):
+            #     if i == 0 or not args.lowstorage:
+            #        fd.File("output/%s-mesh-%i.pvd" % (label, i)).write(mesh.coordinates)
             try:
                 fd.warning(fd.BLUE % "Solve state")
                 solver.solve(optre)
@@ -275,7 +276,7 @@ params_dict = {
     'Status Test': {
         'Gradient Tolerance': 1e-20,
         'Step Tolerance': 1e-20,
-        'Iteration Limit': 12 if args.dim == 2 else 5,
+        'Iteration Limit': 12 if args.dim == 2 else 8,
     }
 }
 
@@ -333,6 +334,9 @@ def cb(*cbargs):
     econ.applyAdjointJacobian(gecon, emul, None, None)
     J.gradient(g, None, None)
     g.plus(gecon)
+    fd.warning("i: %d" % (len(data["iter"])-1))
+    fd.warning("J: %e" % J.value(None, None))
+    fd.warning("drag: %e" % obj.value(None, None))
     fd.warning("dL: %e" % g.norm())
     fd.warning("c : %e" % econ_val.norm())
 
