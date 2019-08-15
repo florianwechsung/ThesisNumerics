@@ -1,5 +1,5 @@
 SetFactory("OpenCASCADE");
-a() = ShapeFromFile("/home/wechsung/ThesisNumerics/mgshapeopt/pipe/meshes/pipe2d.step");
+a() = ShapeFromFile("/home/wechsung/ThesisNumerics/mgshapeopt/meshes/pipe2d.step");
 
 Field[1] = Box;
 Field[1].Thickness = 0.25;

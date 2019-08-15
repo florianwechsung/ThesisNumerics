@@ -2,7 +2,7 @@ ISO-10303-21;
 HEADER;
 FILE_DESCRIPTION(('FreeCAD Model'),'2;1');
 FILE_NAME(
-'/home/wechsung/Documents/Uni/DPhil/ThesisNumerics/mgshapeopt/pipe/meshe
+'/home/wechsung/Documents/Uni/DPhil/ThesisNumerics/mgshapeopt/meshe
 s/airfoil-2d.step','2019-07-27T11:06:51',('Author'),(''),
   'Open CASCADE STEP processor 6.9','FreeCAD','Unknown');
 FILE_SCHEMA(('AUTOMOTIVE_DESIGN { 1 0 10303 214 1 1 1 1 }'));

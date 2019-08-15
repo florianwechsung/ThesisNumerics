@@ -1,5 +1,5 @@
 SetFactory("OpenCASCADE");
-a() = ShapeFromFile("/home/wechsung/ThesisNumerics/mgshapeopt/pipe/meshes/airfoil2d.step");
+a() = ShapeFromFile("/home/wechsung/ThesisNumerics/mgshapeopt/meshes/airfoil2d.step");
 
 Characteristic Length {5, 6} = 0.070000;
 Characteristic Length {1, 2, 3, 4} = 1.400000;

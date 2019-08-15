@@ -1,5 +1,5 @@
 SetFactory("OpenCASCADE");
-a() = ShapeFromFile("/fs4/e590/e590/fwe590/ThesisNumerics/mgshapeopt/pipe/meshes/pipe3d.step");
+a() = ShapeFromFile("/fs4/e590/e590/fwe590/ThesisNumerics/mgshapeopt/meshes/pipe3d.step");
 
 Field[1] = MathEval;
 Field[1].F = "0.100000";
