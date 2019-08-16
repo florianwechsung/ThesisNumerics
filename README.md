@@ -7,7 +7,8 @@ To obtain Firedrake and the other dependencies, follow the installation instruct
 
 
     curl -O https://raw.githubusercontent.com/firedrakeproject/firedrake/master/scripts/firedrake-install
-    python firedrake-install --opencascade --install pyadjoint --doi 10.5281/zenodo.3369183
+    python3 firedrake-install --opencascade --install pyadjoint --doi 10.5281/zenodo.3369183
+    source firedrake/bin/activate
     pip install --no-cache-dir roltrilinos rol
 
     git clone --recurse-submodules https://github.com/florianwechsung/ThesisNumerics.git
