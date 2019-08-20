@@ -64,10 +64,10 @@ Background Field = 1;
         warning(RED % "Using cached mesh for reproducability!")
         mh = OpenCascadeMeshHierarchy(
             "meshes/pipe%id.step" % self.dim, element_size=self.element_size,
-            levels=nref, order=self.order, cache=False, verbose=True,
+            levels=nref, order=self.order, cache=True, verbose=True,
             distribution_parameters=distribution_parameters,
             callbacks=callbacks, project_refinements_to_cad=False,
-            reorder=True, cache=True,
+            reorder=True,
             gmsh="gmsh -algo del%id -optimize_netgen 10 -smooth 10 -format msh2" % self.dim
         )
         return mh

@@ -112,10 +112,10 @@ Background Field = 4;
         warning(RED % "Using cached mesh for reproducability!")
         mh = OpenCascadeMeshHierarchy(
             fi, element_size=self.element_size,
-            levels=nref, order=self.order, cache=False, verbose=True,
+            levels=nref, order=self.order, cache=True, verbose=True,
             distribution_parameters=distribution_parameters,
             callbacks=callbacks, project_refinements_to_cad=False,
-            reorder=True, mh_constructor=mh_constructor, cache=True,
+            reorder=True, mh_constructor=mh_constructor,
             gmsh="gmsh -algo front%id -optimize_netgen 5 -smooth 5 -clscale 0.5" % self.dim
         )
         return mh
